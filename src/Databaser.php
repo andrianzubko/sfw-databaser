@@ -15,7 +15,7 @@ class Databaser
     /**
      * Database initialization.
      */
-    public static function init(string $driver, array $options = [], mixed $profiler = null): DB\Driver
+    public static function init(string $driver, array $options = [], mixed $profiler = null): Database\Driver
     {
         if (!in_array($driver, self::$drivers, true)) {
             throw new Databaser\Exception(
