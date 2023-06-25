@@ -5,7 +5,7 @@ namespace SFW\Databaser;
 /**
  * PostgreSQL result handling.
  */
-class PgSQLResult
+class PgsqlResult
 {
     /**
      * Result object overlaying.

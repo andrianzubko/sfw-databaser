@@ -5,7 +5,7 @@ namespace SFW\Databaser;
 /**
  * PostgreSQL driver.
  */
-class PgSQL extends Driver
+class Pgsql extends Driver
 {
     /**
      * Database instance.
@@ -17,20 +17,19 @@ class PgSQL extends Driver
      */
     protected function connect(): void
     {
-        $connect = $this->options['persistent'] ?? false === true
-            ? 'pg_pconnect' : 'pg_connect';
+        $connect = ($this->options['persistent'] ?? false) === true ? 'pg_pconnect' : 'pg_connect';
 
         $this->db = $connect($this->options['connection'] ?? '', PGSQL_CONNECT_FORCE_NEW);
 
         if ($this->db === false) {
-            throw new Exception('error in the process of establishing a connection');
+            throw new Exception('Error in the process of establishing a connection');
         }
 
         pg_set_error_verbosity($this->db, PGSQL_ERRORS_VERBOSE);
 
         if (pg_set_client_encoding($this->db, $this->options['encoding'] ?? 'UTF-8') == -1) {
             throw new Exception(
-                sprintf('cannot set encoding %s', $this->options['encoding'] ?? 'UTF-8')
+                sprintf('Cannot set encoding %s', $this->options['encoding'] ?? 'UTF-8')
             );
         }
     }
@@ -82,6 +81,6 @@ class PgSQL extends Driver
     {
         $result = parent::query($queries);
 
-        return $result === false ? false : new PgSQLResult($result);
+        return $result === false ? false : new PgsqlResult($result);
     }
 }

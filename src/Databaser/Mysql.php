@@ -5,7 +5,7 @@ namespace SFW\Databaser;
 /**
  * MySQL driver.
  */
-class MySQL extends Driver
+class Mysql extends Driver
 {
     /**
      * Database instance.
@@ -28,6 +28,7 @@ class MySQL extends Driver
                             'username',
                             'password',
                             'database',
+                            'port',
                             'socket',
                         ]
                     )
