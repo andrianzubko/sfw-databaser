@@ -14,10 +14,12 @@ class Mysql extends Driver
 
     /**
      * Connecting to database on demand.
+     *
+     * @throws Exception
      */
     protected function connect(): void
     {
-        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        mysqli_report(\MYSQLI_REPORT_ERROR | \MYSQLI_REPORT_STRICT);
 
         try {
             $this->db = new \mysqli(
@@ -78,6 +80,22 @@ class Mysql extends Driver
      */
     protected function escapeString(string $string): string
     {
-        return sprintf("'%s'", $this->db->real_escape_string($string));
+        return "'" . $this->db->real_escape_string($string) . "'";
+    }
+
+    /**
+     * Executing query and returning result.
+     *
+     * @throws Exception
+     */
+    public function query(string|array $queries): MysqlResult|false
+    {
+        $result = parent::query($queries);
+
+        if ($result === false) {
+            return new MysqlResultEmpty();
+        }
+
+        return new MysqlResult($result, $this->db->affected_rows);
     }
 }

@@ -14,18 +14,20 @@ class Pgsql extends Driver
 
     /**
      * Connecting to database on demand.
+     *
+     * @throws Exception
      */
     protected function connect(): void
     {
         $connect = ($this->options['persistent'] ?? false) === true ? 'pg_pconnect' : 'pg_connect';
 
-        $this->db = $connect($this->options['connection'] ?? '', PGSQL_CONNECT_FORCE_NEW);
+        $this->db = $connect($this->options['connection'] ?? '', \PGSQL_CONNECT_FORCE_NEW);
 
         if ($this->db === false) {
             throw new Exception('Error in the process of establishing a connection');
         }
 
-        pg_set_error_verbosity($this->db, PGSQL_ERRORS_VERBOSE);
+        pg_set_error_verbosity($this->db, \PGSQL_ERRORS_VERBOSE);
 
         if (pg_set_client_encoding($this->db, $this->options['encoding'] ?? 'UTF-8') == -1) {
             throw new Exception(
@@ -75,12 +77,14 @@ class Pgsql extends Driver
     }
 
     /**
-     * Extending this method for result overlaying.
+     * Executing query and returning result.
+     *
+     * @throws Exception
      */
-    public function query(string|array $queries): object|false
+    public function query(string|array $queries): PgsqlResult|false
     {
         $result = parent::query($queries);
 
-        return $result === false ? false : new PgsqlResult($result);
+        return new PgsqlResult($result);
     }
 }

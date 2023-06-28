@@ -67,6 +67,8 @@ abstract class Driver
 
     /**
      * Connecting to database on demand.
+     *
+     * @throws Exception
      */
     abstract protected function connect(): void;
 
@@ -87,6 +89,8 @@ abstract class Driver
 
     /**
      * Begin transaction.
+     *
+     * @throws Exception
      */
     public function begin(?string $isolation = null): void
     {
@@ -101,6 +105,8 @@ abstract class Driver
 
     /**
      * Commit transaction. If nothing was after begin, then ignore begin.
+     *
+     * @throws Exception
      */
     public function commit(): void
     {
@@ -115,6 +121,8 @@ abstract class Driver
 
     /**
      * Rollback transaction.
+     *
+     * @throws Exception
      */
     public function rollback(?string $to = null): void
     {
@@ -129,6 +137,8 @@ abstract class Driver
 
     /**
      * Queueing query.
+     *
+     * @throws Exception
      */
     public function queue(string|array $queries): void
     {
@@ -147,6 +157,9 @@ abstract class Driver
 
     /**
      * Executing query and result returning.
+     *
+     * @throws Exception
+     * @return Result|false
      */
     public function query(string|array $queries): object|false
     {
@@ -163,6 +176,8 @@ abstract class Driver
 
     /**
      * Executing all queued queries.
+     *
+     * @throws Exception
      */
     public function flush(): void
     {
@@ -171,6 +186,8 @@ abstract class Driver
 
     /**
      * Executing all queued queries and result returning.
+     *
+     * @throws Exception
      */
     protected function execute(): object|false
     {
@@ -237,6 +254,8 @@ abstract class Driver
 
     /**
      * Formating and escaping strings for queries.
+     *
+     * @throws Exception
      */
     public function string(array|string|float|null $strings, string $null = 'NULL'): string
     {
