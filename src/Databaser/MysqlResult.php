@@ -10,17 +10,17 @@ class MysqlResult extends Result
     /**
      * Columns are returned into the array having the fieldname as the array index.
      */
-    public const ASSOC = \MYSQLI_ASSOC;
+    public const ASSOC = MYSQLI_ASSOC;
 
     /**
      * Columns are returned into the array having an enumerated index.
      */
-    public const NUM = \MYSQLI_NUM;
+    public const NUM = MYSQLI_NUM;
 
     /**
      * Columns are returned into the array having both a numerical index and the fieldname as the associative index.
      */
-    public const BOTH = \MYSQLI_BOTH;
+    public const BOTH = MYSQLI_BOTH;
 
     /**
      * Passing parameters to properties.

@@ -15,11 +15,11 @@ class Mysql extends Driver
     /**
      * Connecting to database on demand.
      *
-     * @throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     protected function connect(): void
     {
-        mysqli_report(\MYSQLI_REPORT_ERROR | \MYSQLI_REPORT_STRICT);
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
         try {
             $this->db = new \mysqli(
@@ -86,7 +86,7 @@ class Mysql extends Driver
     /**
      * Executing query and returning result.
      *
-     * @throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function query(string|array $queries): MysqlResult|false
     {

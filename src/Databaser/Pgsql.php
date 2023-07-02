@@ -15,19 +15,19 @@ class Pgsql extends Driver
     /**
      * Connecting to database on demand.
      *
-     * @throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     protected function connect(): void
     {
         $connect = ($this->options['persistent'] ?? false) === true ? 'pg_pconnect' : 'pg_connect';
 
-        $this->db = $connect($this->options['connection'] ?? '', \PGSQL_CONNECT_FORCE_NEW);
+        $this->db = $connect($this->options['connection'] ?? '', PGSQL_CONNECT_FORCE_NEW);
 
         if ($this->db === false) {
             throw new Exception('Error in the process of establishing a connection');
         }
 
-        pg_set_error_verbosity($this->db, \PGSQL_ERRORS_VERBOSE);
+        pg_set_error_verbosity($this->db, PGSQL_ERRORS_VERBOSE);
 
         if (pg_set_client_encoding($this->db, $this->options['encoding'] ?? 'UTF-8') == -1) {
             throw new Exception(
@@ -79,7 +79,7 @@ class Pgsql extends Driver
     /**
      * Executing query and returning result.
      *
-     * @throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function query(string|array $queries): PgsqlResult|false
     {

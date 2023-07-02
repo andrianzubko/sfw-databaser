@@ -10,17 +10,17 @@ class PgsqlResult extends Result
     /**
      * Columns are returned into the array having the fieldname as the array index.
      */
-    public const ASSOC = \PGSQL_ASSOC;
+    public const ASSOC = PGSQL_ASSOC;
 
     /**
      * Columns are returned into the array having an enumerated index.
      */
-    public const NUM = \PGSQL_NUM;
+    public const NUM = PGSQL_NUM;
 
     /**
      * Columns are returned into the array having both a numerical index and the fieldname as the associative index.
      */
-    public const BOTH = \PGSQL_BOTH;
+    public const BOTH = PGSQL_BOTH;
 
     /**
      * Passing parameters to properties.
