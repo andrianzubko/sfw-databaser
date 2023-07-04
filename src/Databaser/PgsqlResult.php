@@ -76,6 +76,14 @@ class PgsqlResult extends Result
     }
 
     /**
+     * Fetches all rows in a particular result column as an array.
+     */
+    public function fetchAllColumns(int $column): array
+    {
+        return pg_fetch_all_columns($this->result, $column);
+    }
+
+    /**
      * Returns the number of rows in a result.
      */
     public function numRows(): int

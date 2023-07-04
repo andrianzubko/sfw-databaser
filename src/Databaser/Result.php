@@ -53,6 +53,11 @@ abstract class Result
     abstract public function fetchColumn(int $column): string|float|int|null|false;
 
     /**
+     * Fetches all rows in a particular result column as an array.
+     */
+    abstract public function fetchAllColumns(int $column): array;
+
+    /**
      * Returns the number of rows in a result.
      */
     abstract public function numRows(): int|string;
