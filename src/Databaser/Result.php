@@ -50,12 +50,12 @@ abstract class Result
     /**
      * Fetch a single column from the next row of a result set.
      */
-    abstract public function fetchColumn(int $column): string|float|int|null|false;
+    abstract public function fetchColumn(int $column = 0): string|float|int|null|false;
 
     /**
      * Fetches all rows in a particular result column as an array.
      */
-    abstract public function fetchAllColumns(int $column): array;
+    abstract public function fetchAllColumns(int $column = 0): array;
 
     /**
      * Returns the number of rows in a result.

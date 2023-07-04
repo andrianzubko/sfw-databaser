@@ -55,9 +55,17 @@ class MysqlResultEmpty extends MysqlResult
     /**
      * Fetch a single column from the next row of a result set.
      */
-    public function fetchColumn(int $column): string|float|int|null|false
+    public function fetchColumn(int $column = 0): string|float|int|null|false
     {
         return false;
+    }
+
+    /**
+     * Fetches all rows in a particular result column as an array.
+     */
+    public function fetchAllColumns(int $column = 0): array
+    {
+        return [];
     }
 
     /**

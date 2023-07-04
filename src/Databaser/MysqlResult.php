@@ -70,9 +70,23 @@ class MysqlResult extends Result
     /**
      * Fetch a single column from the next row of a result set.
      */
-    public function fetchColumn(int $column): string|float|int|null|false
+    public function fetchColumn(int $column = 0): string|float|int|null|false
     {
         return $this->result->fetch_column($column);
+    }
+
+    /**
+     * Fetches all rows in a particular result column as an array.
+     */
+    public function fetchAllColumns(int $column = 0): array
+    {
+        $columns = [];
+
+        while (($value = $this->result->fetch_column($column)) !== false) {
+            $columns[] = $value;
+        }
+
+        return $columns;
     }
 
     /**

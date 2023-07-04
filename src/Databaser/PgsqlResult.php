@@ -70,7 +70,7 @@ class PgsqlResult extends Result
     /**
      * Fetch a single column from the next row of a result set.
      */
-    public function fetchColumn(int $column): string|null|false
+    public function fetchColumn(int $column = 0): string|null|false
     {
         return pg_fetch_result($this->result, $column);
     }
@@ -78,7 +78,7 @@ class PgsqlResult extends Result
     /**
      * Fetches all rows in a particular result column as an array.
      */
-    public function fetchAllColumns(int $column): array
+    public function fetchAllColumns(int $column = 0): array
     {
         return pg_fetch_all_columns($this->result, $column);
     }
