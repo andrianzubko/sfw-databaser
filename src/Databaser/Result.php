@@ -28,6 +28,16 @@ abstract class Result
     protected array $jsonFields;
 
     /**
+     * Mark fields as json to decode.
+     */
+    public function json(string|int ...$fields): self
+    {
+        $this->jsonFields = $fields;
+
+        return $this;
+    }
+
+    /**
      * Fetches all result rows as an associative array, a numeric array, or both.
      */
     abstract public function fetchAll(int $mode = self::ASSOC): array;
@@ -71,16 +81,6 @@ abstract class Result
      * Returns number of affected records.
      */
     abstract public function affectedRows(): int|string;
-
-    /**
-     * Mark fields as json to decode.
-     */
-    public function json(string|int ...$fields): self
-    {
-        $this->jsonFields = $fields;
-
-        return $this;
-    }
 
     /**
      * Decode json fields in row.
