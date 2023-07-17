@@ -8,7 +8,7 @@ namespace SFW\Databaser;
 class MysqlResult extends Result
 {
     /**
-     * Columns are returned into the array having the fieldname as the array index.
+     * Columns are returned into the array having the field-name as the array index.
      */
     public const ASSOC = MYSQLI_ASSOC;
 
@@ -18,7 +18,7 @@ class MysqlResult extends Result
     public const NUM = MYSQLI_NUM;
 
     /**
-     * Columns are returned into the array having both a numerical index and the fieldname as the associative index.
+     * Columns are returned into the array having both a numerical index and the field-name as the associative index.
      */
     public const BOTH = MYSQLI_BOTH;
 
@@ -32,7 +32,15 @@ class MysqlResult extends Result
      */
     public function fetchAll(int $mode = self::ASSOC): array
     {
-        return $this->result->fetch_all($mode);
+        $rows = $this->result->fetch_all($mode);
+
+        if (isset($this->jsonFields)) {
+            foreach ($rows as $i => $row) {
+                $this->decodeJsonInRow($rows[$i]);
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -40,7 +48,15 @@ class MysqlResult extends Result
      */
     public function fetchArray(int $mode = self::ASSOC): array|false
     {
-        return $this->result->fetch_array($mode) ?? false;
+        $row = $this->result->fetch_array($mode) ?? false;
+
+        if (isset($this->jsonFields)
+            && $row !== false
+        ) {
+            $this->decodeJsonInRow($row);
+        }
+
+        return $row;
     }
 
     /**
@@ -48,7 +64,15 @@ class MysqlResult extends Result
      */
     public function fetchAssoc(): array|false
     {
-        return $this->result->fetch_assoc() ?? false;
+        $row = $this->result->fetch_assoc() ?? false;
+
+        if (isset($this->jsonFields)
+            && $row !== false
+        ) {
+            $this->decodeJsonInRow($row);
+        }
+
+        return $row;
     }
 
     /**
@@ -56,7 +80,15 @@ class MysqlResult extends Result
      */
     public function fetchObject(): object|false
     {
-        return $this->result->fetch_object() ?? false;
+        $row = $this->result->fetch_assoc() ?? false;
+
+        if (isset($this->jsonFields)
+            && $row !== false
+        ) {
+            $this->decodeJsonInRow($row);
+        }
+
+        return $row === false ? false : (object) $row;
     }
 
     /**
@@ -64,15 +96,31 @@ class MysqlResult extends Result
      */
     public function fetchRow(): array|false
     {
-        return $this->result->fetch_row() ?? false;
+        $row = $this->result->fetch_row() ?? false;
+
+        if (isset($this->jsonFields)
+            && $row !== false
+        ) {
+            $this->decodeJsonInRow($row);
+        }
+
+        return $row;
     }
 
     /**
      * Fetch a single column from the next row of a result set.
      */
-    public function fetchColumn(int $column = 0): string|float|int|null|false
+    public function fetchColumn(int $column = 0): array|string|float|int|null|false
     {
-        return $this->result->fetch_column($column);
+        $value = $this->result->fetch_column($column);
+
+        if (isset($this->jsonFields)
+            && !empty($value)
+        ) {
+            return json_decode($value, true);
+        }
+
+        return $value;
     }
 
     /**
@@ -80,13 +128,13 @@ class MysqlResult extends Result
      */
     public function fetchAllColumns(int $column = 0): array
     {
-        $columns = [];
+        $values = [];
 
-        while (($value = $this->result->fetch_column($column)) !== false) {
-            $columns[] = $value;
+        while (($value = $this->fetchColumn($column)) !== false) {
+            $values[] = $value;
         }
 
-        return $columns;
+        return $values;
     }
 
     /**

@@ -8,7 +8,7 @@ namespace SFW\Databaser;
 class PgsqlResult extends Result
 {
     /**
-     * Columns are returned into the array having the fieldname as the array index.
+     * Columns are returned into the array having the field-name as the array index.
      */
     public const ASSOC = PGSQL_ASSOC;
 
@@ -18,7 +18,7 @@ class PgsqlResult extends Result
     public const NUM = PGSQL_NUM;
 
     /**
-     * Columns are returned into the array having both a numerical index and the fieldname as the associative index.
+     * Columns are returned into the array having both a numerical index and the field-name as the associative index.
      */
     public const BOTH = PGSQL_BOTH;
 
@@ -32,7 +32,15 @@ class PgsqlResult extends Result
      */
     public function fetchAll(int $mode = self::ASSOC): array
     {
-        return pg_fetch_all($this->result, $mode);
+        $rows = pg_fetch_all($this->result, $mode);
+
+        if (isset($this->jsonFields)) {
+            foreach ($rows as $i => $row) {
+                $this->decodeJsonInRow($rows[$i]);
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -40,7 +48,15 @@ class PgsqlResult extends Result
      */
     public function fetchArray(int $mode = self::ASSOC): array|false
     {
-        return pg_fetch_array($this->result, null, $mode);
+        $row = pg_fetch_array($this->result, null, $mode);
+
+        if (isset($this->jsonFields)
+            && $row !== false
+        ) {
+            $this->decodeJsonInRow($row);
+        }
+
+        return $row;
     }
 
     /**
@@ -48,7 +64,15 @@ class PgsqlResult extends Result
      */
     public function fetchAssoc(): array|false
     {
-        return pg_fetch_assoc($this->result);
+        $row = pg_fetch_assoc($this->result);
+
+        if (isset($this->jsonFields)
+            && $row !== false
+        ) {
+            $this->decodeJsonInRow($row);
+        }
+
+        return $row;
     }
 
     /**
@@ -56,7 +80,15 @@ class PgsqlResult extends Result
      */
     public function fetchObject(): object|false
     {
-        return pg_fetch_object($this->result);
+        $row = pg_fetch_assoc($this->result);
+
+        if (isset($this->jsonFields)
+            && $row !== false
+        ) {
+            $this->decodeJsonInRow($row);
+        }
+
+        return $row === false ? false : (object) $row;
     }
 
     /**
@@ -64,15 +96,31 @@ class PgsqlResult extends Result
      */
     public function fetchRow(): array|false
     {
-        return pg_fetch_row($this->result);
+        $row = pg_fetch_row($this->result);
+
+        if (isset($this->jsonFields)
+            && $row !== false
+        ) {
+            $this->decodeJsonInRow($row);
+        }
+
+        return $row;
     }
 
     /**
      * Fetch a single column from the next row of a result set.
      */
-    public function fetchColumn(int $column = 0): string|null|false
+    public function fetchColumn(int $column = 0): array|string|null|false
     {
-        return pg_fetch_result($this->result, $column);
+        $value = pg_fetch_result($this->result, $column);
+
+        if (isset($this->jsonFields)
+            && !empty($value)
+        ) {
+            return json_decode($value, true);
+        }
+
+        return $value;
     }
 
     /**
@@ -80,7 +128,17 @@ class PgsqlResult extends Result
      */
     public function fetchAllColumns(int $column = 0): array
     {
-        return pg_fetch_all_columns($this->result, $column);
+        $values = pg_fetch_all_columns($this->result, $column);
+
+        if (isset($this->jsonFields)) {
+            foreach ($values as $i => $value) {
+                if (!empty($value)) {
+                    $values[$i] = json_decode($value, true);
+                }
+            }
+        }
+
+        return $values;
     }
 
     /**

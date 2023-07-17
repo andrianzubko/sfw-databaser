@@ -80,7 +80,7 @@ abstract class Driver
     /**
      * Executing bundle queries at once.
      */
-    abstract protected function executeQueries(string $queires): array;
+    abstract protected function executeQueries(string $queries): array;
 
     /**
      * Escaping string.
@@ -232,7 +232,7 @@ abstract class Driver
     }
 
     /**
-     * Formating numbers for queries.
+     * Formatting numbers for queries.
      */
     public function number(array|string|float|null $numbers, string $null = 'NULL'): string
     {
@@ -254,7 +254,7 @@ abstract class Driver
     }
 
     /**
-     * Formating and escaping strings for queries.
+     * Formatting and escaping strings for queries.
      *
      * Throws \SFW\Databaser\Exception
      */

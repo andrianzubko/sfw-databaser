@@ -8,7 +8,7 @@ namespace SFW\Databaser;
 abstract class Result
 {
     /**
-     * Columns are returned into the array having the fieldname as the array index.
+     * Columns are returned into the array having the field-name as the array index.
      */
     public const ASSOC = 1;
 
@@ -18,9 +18,14 @@ abstract class Result
     public const NUM = 2;
 
     /**
-     * Columns are returned into the array having both a numerical index and the fieldname as the associative index.
+     * Columns are returned into the array having both a numerical index and the field-name as the associative index.
      */
     public const BOTH = 3;
+
+    /**
+     * Json fields to decode.
+     */
+    protected array $jsonFields;
 
     /**
      * Fetches all result rows as an associative array, a numeric array, or both.
@@ -50,7 +55,7 @@ abstract class Result
     /**
      * Fetch a single column from the next row of a result set.
      */
-    abstract public function fetchColumn(int $column = 0): string|float|int|null|false;
+    abstract public function fetchColumn(int $column = 0): array|string|float|int|null|false;
 
     /**
      * Fetches all rows in a particular result column as an array.
@@ -66,4 +71,26 @@ abstract class Result
      * Returns number of affected records.
      */
     abstract public function affectedRows(): int|string;
+
+    /**
+     * Mark fields as json to decode.
+     */
+    public function json(string|int ...$fields): self
+    {
+        $this->jsonFields = $fields;
+
+        return $this;
+    }
+
+    /**
+     * Decode json fields in row.
+     */
+    protected function decodeJsonInRow(array &$row): void
+    {
+        foreach ($this->jsonFields as $field) {
+            if (isset($row[$field])) {
+                $row[$field] = json_decode($row[$field], true);
+            }
+        }
+    }
 }
