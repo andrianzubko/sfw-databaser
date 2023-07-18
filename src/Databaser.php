@@ -1,21 +1,26 @@
 <?php
 
-namespace SFW\Databaser;
+namespace SFW;
 
 /**
- * Abstraction for driver.
+ * Databaser.
  */
-abstract class Driver
+class Databaser
 {
+    /**
+     * PDO instance
+     */
+    protected \PDO $db;
+
     /**
      * Queries queue.
      */
     protected array $queries = [];
 
     /**
-     * Microtime of executed queries.
+     * Timer of executed queries.
      */
-    protected float $microtime = 0;
+    protected float $timer = 0;
 
     /**
      * Count of executed queries.
@@ -48,16 +53,23 @@ abstract class Driver
     protected const ROLLBACK = 3;
 
     /**
-     * Clearing on shutdown.
+     * Clearing at shutdown if still in transaction.
      */
-    public function __construct(protected array $options, protected mixed $profiler = null)
-    {
+    public function __construct(
+        protected string $dsn,
+        protected ?string $username = null,
+        protected ?string $password = null,
+        protected ?array $options = null,
+        protected mixed $profiler = null
+    ) {
         register_shutdown_function(
             function () {
                 register_shutdown_function(
                     function () {
                         if ($this->inTrans) {
-                            $this->rollback();
+                            try {
+                                $this->rollback();
+                            } catch (Databaser\Exception) {}
                         }
                     }
                 );
@@ -68,29 +80,32 @@ abstract class Driver
     /**
      * Connecting to database on demand.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Databaser\Exception
      */
-    abstract protected function connect(): void;
+    protected function connect(): void
+    {
+        $this->options ??= [];
 
-    /**
-     * Begin command is different on different databases.
-     */
-    abstract protected function makeBeginCommand(?string $isolation): string;
+        $this->options[\PDO::ATTR_ERRMODE] = \PDO::ERRMODE_EXCEPTION;
 
-    /**
-     * Executing bundle queries at once.
-     */
-    abstract protected function executeQueries(string $queries): array;
+        $this->options[\PDO::ATTR_EMULATE_PREPARES] = true;
 
-    /**
-     * Escaping string.
-     */
-    abstract protected function escapeString(string $string): string;
+        try {
+            $this->db = new \PDO(
+                $this->dsn,
+                $this->username,
+                $this->password,
+                $this->options
+            );
+        } catch (\PDOException $error) {
+            throw new Databaser\Exception($error->errorInfo);
+        }
+    }
 
     /**
      * Begin transaction.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Databaser\Exception
      */
     public function begin(?string $isolation = null): void
     {
@@ -100,17 +115,29 @@ abstract class Driver
             $this->rollback();
         }
 
-        $this->queries[] = [self::BEGIN, $this->makeBeginCommand($isolation)];
+        $command = "START TRANSACTION";
+
+        if (isset($isolation)) {
+            if (str_starts_with($this->dsn, 'pgsql')) {
+                $command = "START TRANSACTION $isolation";
+            } else {
+                $command = "SET TRANSACTION $isolation; START TRANSACTION";
+            }
+        }
+
+        $this->queries[] = [self::BEGIN, $command];
     }
 
     /**
      * Commit transaction. If nothing was after begin, then ignore begin.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Databaser\Exception
      */
     public function commit(): void
     {
-        if ($this->queries && end($this->queries)[0] == self::BEGIN) {
+        if ($this->queries
+            && end($this->queries)[0] == self::BEGIN
+        ) {
             array_pop($this->queries);
         } else {
             $this->queries[] = [self::COMMIT, "COMMIT"];
@@ -122,7 +149,7 @@ abstract class Driver
     /**
      * Rollback transaction.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Databaser\Exception
      */
     public function rollback(?string $to = null): void
     {
@@ -138,47 +165,41 @@ abstract class Driver
     /**
      * Queueing query.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Databaser\Exception
      */
-    public function queue(string|array $queries): void
+    public function queue(array|string ...$queries): void
     {
-        if (is_array($queries)) {
-            foreach ($queries as $query) {
+        foreach (array_keys($queries) as $i) {
+            foreach ((array) $queries[$i] as $query) {
                 $this->queries[] = [self::REGULAR, $query];
             }
-        } else {
-            $this->queries[] = [self::REGULAR, $queries];
         }
 
-        if (count($this->queries) >= 100) {
+        if (count($this->queries) > 64) {
             $this->execute();
         }
     }
 
     /**
-     * Executing query and result returning.
+     * Executing query and return result.
      *
-     * Throws \SFW\Databaser\Exception
-     *
-     * @return Result|false
+     * @throws Databaser\Exception
      */
-    public function query(string|array $queries): object|false
+    public function query(array|string ...$queries): Databaser\Result|false
     {
-        if (is_array($queries)) {
-            foreach ($queries as $query) {
+        foreach (array_keys($queries) as $i) {
+            foreach ((array) $queries[$i] as $query) {
                 $this->queries[] = [self::REGULAR, $query];
             }
-        } else {
-            $this->queries[] = [self::REGULAR, $queries];
         }
 
-        return $this->execute();
+        return new Databaser\Result($this->execute());
     }
 
     /**
      * Executing all queued queries.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Databaser\Exception
      */
     public function flush(): void
     {
@@ -186,24 +207,41 @@ abstract class Driver
     }
 
     /**
+     * Returns the ID of the last inserted row or sequence value.
+     *
+     * @throws Databaser\Exception
+     */
+    public function lastInsertId(?string $name = null): string|false
+    {
+        if (!isset($this->db)) {
+            $this->connect();
+        }
+
+        return $this->db->lastInsertId($name);
+    }
+
+    /**
      * Executing all queued queries and result returning.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Databaser\Exception
      */
-    protected function execute(): object|false
+    protected function execute(): \PDOStatement|false
     {
         if (!$this->queries) {
             return false;
         }
 
-        if ($this->db === false) {
+        if (!isset($this->db)) {
             $this->connect();
         }
 
         foreach ($this->queries as $query) {
             if ($query[0] == self::BEGIN) {
                 $this->inTrans = true;
-            } elseif ($query[0] == self::COMMIT || $query[0] == self::ROLLBACK) {
+            } elseif (
+                   $query[0] == self::COMMIT
+                || $query[0] == self::ROLLBACK
+            ) {
                 $this->inTrans = false;
             }
         }
@@ -214,18 +252,18 @@ abstract class Driver
 
         $this->counter += 1;
 
-        $microtime = gettimeofday(true);
+        $timer = gettimeofday(true);
 
-        [$result, $error] = $this->executeQueries(implode(';', $queries));
+        try {
+            $result = $this->db->query(implode(';', $queries));
+        } catch (\PDOException $error) {
+            throw new Databaser\Exception($error->errorInfo);
+        } finally {
+            $this->timer += $timer = gettimeofday(true) - $timer;
 
-        $this->microtime += $microtime = gettimeofday(true) - $microtime;
-
-        if (isset($this->profiler)) {
-            ($this->profiler)($microtime, $queries);
-        }
-
-        if ($error !== false) {
-            throw new Exception(...$error);
+            if (isset($this->profiler)) {
+                ($this->profiler)($timer, $queries);
+            }
         }
 
         return $result;
@@ -234,7 +272,7 @@ abstract class Driver
     /**
      * Formatting numbers for queries.
      */
-    public function number(array|string|float|null $numbers, string $null = 'NULL'): string
+    public function number(mixed $numbers, string $null = 'NULL'): string
     {
         if (is_scalar($numbers)) {
             return (string) (double) $numbers;
@@ -256,20 +294,20 @@ abstract class Driver
     /**
      * Formatting and escaping strings for queries.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Databaser\Exception
      */
-    public function string(array|string|float|null $strings, string $null = 'NULL'): string
+    public function string(mixed $strings, string $null = 'NULL'): string
     {
-        if ($this->db === false) {
+        if (!isset($this->db)) {
             $this->connect();
         }
 
         if (is_scalar($strings)) {
-            return $this->escapeString((string) $strings);
+            return $this->db->quote((string) $strings);
         } elseif (is_array($strings)) {
             foreach ($strings as &$value) {
                 if (isset($value)) {
-                    $value = $this->escapeString((string) $value);
+                    $value = $this->db->quote((string) $value);
                 } else {
                     $value = $null;
                 }
@@ -334,15 +372,15 @@ abstract class Driver
     }
 
     /**
-     * Getting microtime of executed querues.
+     * Getting timer of executed queries.
      */
-    public function getMicrotime(): float
+    public function getTimer(): float
     {
-        return $this->microtime;
+        return $this->timer;
     }
 
     /**
-     * Getting count of executed querues.
+     * Getting count of executed queries.
      */
     public function getCounter(): int
     {
