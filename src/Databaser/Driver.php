@@ -1,21 +1,41 @@
 <?php
 
-namespace SFW;
+namespace SFW\Databaser;
 
 /**
- * Databaser.
+ * Database driver.
  */
-class Databaser
+abstract class Driver
 {
     /**
-     * PDO instance
+     * Special mark for regular query.
      */
-    protected \PDO $db;
+    protected const REGULAR = 0;
+
+    /**
+     * Special mark for begin query.
+     */
+    protected const BEGIN = 1;
+
+    /**
+     * Special mark for commit query.
+     */
+    protected const COMMIT = 2;
+
+    /**
+     * Special mark for rollback query.
+     */
+    protected const ROLLBACK = 3;
 
     /**
      * Queries queue.
      */
     protected array $queries = [];
+
+    /**
+     * In transaction flag.
+     */
+    protected bool $inTrans = false;
 
     /**
      * Timer of executed queries.
@@ -28,40 +48,10 @@ class Databaser
     protected int $counter = 0;
 
     /**
-     * In transaction flag.
-     */
-    protected bool $inTrans = false;
-
-    /**
-     * Special mark for regular queries.
-     */
-    protected const REGULAR = 0;
-
-    /**
-     * Special mark for begin queries.
-     */
-    protected const BEGIN = 1;
-
-    /**
-     * Special mark for commit queries.
-     */
-    protected const COMMIT = 2;
-
-    /**
-     * Special mark for rollback queries.
-     */
-    protected const ROLLBACK = 3;
-
-    /**
      * Clearing at shutdown if still in transaction.
      */
-    public function __construct(
-        protected string $dsn,
-        protected ?string $username = null,
-        protected ?string $password = null,
-        protected ?array $options = null,
-        protected mixed $profiler = null
-    ) {
+    public function __construct(protected array $options = [], protected mixed $profiler = null)
+    {
         register_shutdown_function(
             function () {
                 register_shutdown_function(
@@ -69,7 +59,7 @@ class Databaser
                         if ($this->inTrans) {
                             try {
                                 $this->rollback();
-                            } catch (Databaser\Exception) {}
+                            } catch (Exception) {}
                         }
                     }
                 );
@@ -80,32 +70,19 @@ class Databaser
     /**
      * Connecting to database on demand.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
-    protected function connect(): void
-    {
-        $this->options ??= [];
+    abstract protected function connect(): void;
 
-        $this->options[\PDO::ATTR_ERRMODE] = \PDO::ERRMODE_EXCEPTION;
-
-        $this->options[\PDO::ATTR_EMULATE_PREPARES] = true;
-
-        try {
-            $this->db = new \PDO(
-                $this->dsn,
-                $this->username,
-                $this->password,
-                $this->options
-            );
-        } catch (\PDOException $error) {
-            throw new Databaser\Exception($error->errorInfo);
-        }
-    }
+    /**
+     * Begin command is different at different databases.
+     */
+    abstract protected function makeBeginCommand(?string $isolation): string;
 
     /**
      * Begin transaction.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
     public function begin(?string $isolation = null): void
     {
@@ -115,28 +92,18 @@ class Databaser
             $this->rollback();
         }
 
-        $command = "START TRANSACTION";
-
-        if (isset($isolation)) {
-            if (str_starts_with($this->dsn, 'pgsql')) {
-                $command = "START TRANSACTION $isolation";
-            } else {
-                $command = "SET TRANSACTION $isolation; START TRANSACTION";
-            }
-        }
-
-        $this->queries[] = [self::BEGIN, $command];
+        $this->queries[] = [self::BEGIN, $this->makeBeginCommand($isolation)];
     }
 
     /**
      * Commit transaction. If nothing was after begin, then ignore begin.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
     public function commit(): void
     {
         if ($this->queries
-            && end($this->queries)[0] == self::BEGIN
+            && end($this->queries)[0] === self::BEGIN
         ) {
             array_pop($this->queries);
         } else {
@@ -149,7 +116,7 @@ class Databaser
     /**
      * Rollback transaction.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
     public function rollback(?string $to = null): void
     {
@@ -165,14 +132,12 @@ class Databaser
     /**
      * Queueing query.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
-    public function queue(array|string ...$queries): void
+    public function queue(array|string $queries): void
     {
-        foreach (array_keys($queries) as $i) {
-            foreach ((array) $queries[$i] as $query) {
-                $this->queries[] = [self::REGULAR, $query];
-            }
+        foreach ((array) $queries as $query) {
+            $this->queries[] = [self::REGULAR, $query];
         }
 
         if (count($this->queries) > 64) {
@@ -181,25 +146,28 @@ class Databaser
     }
 
     /**
+     * Assign result to local class.
+     */
+    abstract protected function assignResult(object|false $result): Result;
+
+    /**
      * Executing query and return result.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
-    public function query(array|string ...$queries): Databaser\Result|false
+    public function query(array|string $queries): Result|false
     {
-        foreach (array_keys($queries) as $i) {
-            foreach ((array) $queries[$i] as $query) {
-                $this->queries[] = [self::REGULAR, $query];
-            }
+        foreach ((array) $queries as $query) {
+            $this->queries[] = [self::REGULAR, $query];
         }
 
-        return new Databaser\Result($this->execute());
+        return $this->assignResult($this->execute());
     }
 
     /**
      * Executing all queued queries.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
     public function flush(): void
     {
@@ -208,24 +176,25 @@ class Databaser
 
     /**
      * Returns the ID of the last inserted row or sequence value.
-     *
-     * @throws Databaser\Exception
      */
-    public function lastInsertId(?string $name = null): string|false
+    public function lastInsertId(): int|string|false
     {
-        if (!isset($this->db)) {
-            $this->connect();
-        }
-
-        return $this->db->lastInsertId($name);
+        return false;
     }
+
+    /**
+     * Executing bundle queries at once.
+     *
+     * @throws Exception
+     */
+    abstract protected function executeQueries(string $queries): object|false;
 
     /**
      * Executing all queued queries and result returning.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
-    protected function execute(): \PDOStatement|false
+    protected function execute(): object|false
     {
         if (!$this->queries) {
             return false;
@@ -236,11 +205,11 @@ class Databaser
         }
 
         foreach ($this->queries as $query) {
-            if ($query[0] == self::BEGIN) {
+            if ($query[0] === self::BEGIN) {
                 $this->inTrans = true;
             } elseif (
-                   $query[0] == self::COMMIT
-                || $query[0] == self::ROLLBACK
+                   $query[0] === self::COMMIT
+                || $query[0] === self::ROLLBACK
             ) {
                 $this->inTrans = false;
             }
@@ -255,9 +224,13 @@ class Databaser
         $timer = gettimeofday(true);
 
         try {
-            $result = $this->db->query(implode(';', $queries));
-        } catch (\PDOException $error) {
-            throw new Databaser\Exception($error->errorInfo);
+            $result = $this->executeQueries(implode(';', $queries));
+        } catch (Exception $error) {
+            throw new Exception(
+                $this->driver,
+                $error->getSqlMessage(),
+                $error->getSqlState()
+            );
         } finally {
             $this->timer += $timer = gettimeofday(true) - $timer;
 
@@ -277,11 +250,11 @@ class Databaser
         if (is_scalar($numbers)) {
             return (string) (double) $numbers;
         } elseif (is_array($numbers)) {
-            foreach ($numbers as &$value) {
+            foreach ($numbers as $i => $value) {
                 if (isset($value)) {
-                    $value = (double) $value;
+                    $numbers[$i] = (double) $value;
                 } else {
-                    $value = $null;
+                    $numbers[$i] = $null;
                 }
             }
 
@@ -292,9 +265,14 @@ class Databaser
     }
 
     /**
+     * Escaping string.
+     */
+    abstract protected function escapeString(string $string): string;
+
+    /**
      * Formatting and escaping strings for queries.
      *
-     * @throws Databaser\Exception
+     * @throws Exception
      */
     public function string(mixed $strings, string $null = 'NULL'): string
     {
@@ -303,13 +281,13 @@ class Databaser
         }
 
         if (is_scalar($strings)) {
-            return $this->db->quote((string) $strings);
+            return $this->escapeString((string) $strings);
         } elseif (is_array($strings)) {
-            foreach ($strings as &$value) {
+            foreach ($strings as $i => $value) {
                 if (isset($value)) {
-                    $value = $this->db->quote((string) $value);
+                    $strings[$i] = $this->escapeString((string) $value);
                 } else {
-                    $value = $null;
+                    $strings[$i] = $null;
                 }
             }
 
@@ -324,11 +302,11 @@ class Databaser
      */
     public function every(array $expressions): string
     {
-        if ($expressions) {
-            return implode(' AND ', $expressions);
+        if (!$expressions) {
+            return 'true';
         }
 
-        return 'true';
+        return implode(' AND ', $expressions);
     }
 
     /**
@@ -336,11 +314,11 @@ class Databaser
      */
     public function any(array $expressions): string
     {
-        if ($expressions) {
-            return implode(' OR ', $expressions);
+        if (!$expressions) {
+            return 'true';
         }
 
-        return 'true';
+        return implode(' OR ', $expressions);
     }
 
     /**
@@ -348,11 +326,11 @@ class Databaser
      */
     public function commas(array $expressions): string
     {
-        if ($expressions) {
-            return implode(',', $expressions);
+        if (!$expressions) {
+            return 'true';
         }
 
-        return 'true';
+        return implode(',', $expressions);
     }
 
     /**

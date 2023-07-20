@@ -3,85 +3,39 @@
 namespace SFW\Databaser;
 
 /**
- * Databaser result handling.
+ * Database result handling.
  */
-class Result implements \IteratorAggregate
+abstract class Result implements \IteratorAggregate
 {
     /**
-     *
+     * Result rows.
      */
-    public int $affectedRows = 0;
+    protected array $rows;
 
     /**
-     *
-     */
-    public int $numRows = 0;
-
-    /**
-     *
-     */
-    protected array $rows = [];
-
-    /**
-     *
-     */
-    protected int $i = 0;
-
-    /**
-     *
+     * Names of columns in result rows.
      */
     protected array $names = [];
 
     /**
-     *
+     * Internal result pointer.
      */
-    public function __construct(\PDOStatement|false $result)
-    {
-        if ($result === false) {
-            return;
-        }
-
-        do {
-            $this->affectedRows = $result->rowCount();
-
-            $this->rows = $result->fetchAll(\PDO::FETCH_NUM);
-
-            $this->names = [];
-
-            if ($this->rows) {
-                foreach ($this->rows[0] as $i => $value) {
-                    $meta = $result->getColumnMeta($i);
-
-                    $this->names[$i] = $meta['name'] ?? (string) $i;
-                }
-            }
-        } while ($result->nextRowset());
-
-        $this->numRows = count($this->rows);
-    }
+    protected int $i = 0;
 
     /**
-     *
+     * Fetches all result rows as an associative array (default), a numeric array, or object.
      */
-    public function fetchAll(bool $num = false, bool $assoc = false, bool $both = false): array
+    public function fetchAll(bool $num = false, bool $assoc = false, bool $object = false): array
     {
         $rows = [];
 
-        if ($both || $num && $assoc) {
-            foreach ($this->rows as $i => $row) {
-                foreach ($row as $j => $value) {
-                    $rows[$i][$this->names[$j]] = $value;
-
-                    $rows[$i][$j] = $value;
-                }
-            }
-        } elseif ($num) {
-            $rows = $this->rows;
-        } else {
-            foreach ($this->rows as $i => $row) {
-                foreach ($row as $j => $value) {
-                    $rows[$i][$this->names[$j]] = $value;
-                }
+        foreach ($this->rows as $row) {
+            if ($num) {
+                $rows[] = $row;
+            } elseif ($object) {
+                $rows[] = (object) array_combine($this->names, $row);
+            } else {
+                $rows[] = array_combine($this->names, $row);
             }
         }
 
@@ -89,37 +43,27 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     *
+     * Fetch the next row of a result set as an object.
      */
     public function fetchObject(): object|false
     {
-        $assoc = $this->fetchAssoc();
+        $row = $this->rows[$this->i++] ?? false;
 
-        return $assoc === false ? false : (object) $assoc;
+        return $row === false ? false : (object) array_combine($this->names, $row);
     }
 
     /**
-     *
+     * Fetch the next row of a result set as an associative array.
      */
     public function fetchAssoc(): array|false
     {
         $row = $this->rows[$this->i++] ?? false;
 
-        if ($row === false) {
-            return false;
-        }
-
-        $assoc = [];
-
-        foreach ($row as $j => $value) {
-            $assoc[$this->names[$j]] = $value;
-        }
-
-        return $assoc;
+        return $row === false ? false : array_combine($this->names, $row);
     }
 
     /**
-     *
+     * Fetch the next row of a result set as an numeric array.
      */
     public function fetchRow(): array|false
     {
@@ -127,7 +71,7 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     *
+     * Fetch a single column from the next row of a result set.
      */
     public function fetchColumn(int $column = 0): mixed
     {
@@ -137,7 +81,7 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     *
+     * Move internal result pointer.
      */
     public function seek(int $i = 0): void
     {
@@ -145,7 +89,20 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     *
+     * Returns number of affected rows.
+     */
+    abstract public function affectedRows(): int|string;
+
+    /**
+     * Returns the number of rows in a result.
+     */
+    public function numRows(): int|string
+    {
+        return count($this->rows);
+    }
+
+    /**
+     * Gets result set iterator.
      */
     public function getIterator(): \Traversable
     {
