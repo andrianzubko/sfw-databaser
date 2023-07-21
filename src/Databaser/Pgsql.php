@@ -20,7 +20,7 @@ class Pgsql extends Driver
     /**
      * Connecting to database on demand.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     protected function connect(): void
     {
@@ -75,7 +75,7 @@ class Pgsql extends Driver
     /**
      * Executing bundle queries at once.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     protected function executeQueries(string $queries): object|false
     {

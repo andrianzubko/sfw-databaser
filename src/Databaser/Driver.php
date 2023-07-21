@@ -84,7 +84,7 @@ abstract class Driver
     /**
      * Connecting to database on demand.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     abstract protected function connect(): void;
 
@@ -96,7 +96,7 @@ abstract class Driver
     /**
      * Begin transaction.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function begin(?string $isolation = null): void
     {
@@ -112,7 +112,7 @@ abstract class Driver
     /**
      * Commit transaction. If nothing was after begin, then ignore begin.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function commit(): void
     {
@@ -130,7 +130,7 @@ abstract class Driver
     /**
      * Rollback transaction.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function rollback(?string $to = null): void
     {
@@ -146,7 +146,7 @@ abstract class Driver
     /**
      * Queueing query.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function queue(array|string $queries): void
     {
@@ -167,7 +167,7 @@ abstract class Driver
     /**
      * Executing query and return result.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function query(array|string $queries): Result|false
     {
@@ -181,7 +181,7 @@ abstract class Driver
     /**
      * Executing all queued queries.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function flush(): void
     {
@@ -191,7 +191,7 @@ abstract class Driver
     /**
      * Returns the ID of the last inserted row or sequence value.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function lastInsertId(): int|string|false
     {
@@ -205,14 +205,14 @@ abstract class Driver
     /**
      * Executing bundle queries at once.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     abstract protected function executeQueries(string $queries): object|false;
 
     /**
      * Executing all queued queries and result returning.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     protected function execute(): object|false
     {
@@ -292,7 +292,7 @@ abstract class Driver
     /**
      * Formatting and escaping strings for queries.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function string(mixed $strings, string $null = 'NULL'): string
     {

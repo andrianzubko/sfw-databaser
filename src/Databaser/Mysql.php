@@ -20,7 +20,7 @@ class Mysql extends Driver
     /**
      * Connecting to database on demand.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     protected function connect(): void
     {
@@ -85,7 +85,7 @@ class Mysql extends Driver
     /**
      * Returns the ID of the last inserted row or sequence value.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     public function lastInsertId(): int|string|false
     {
@@ -99,7 +99,7 @@ class Mysql extends Driver
     /**
      * Executing bundle queries at once.
      *
-     * Throws Exception
+     * Throws \SFW\Databaser\Exception
      */
     protected function executeQueries(string $queries): object|false
     {
