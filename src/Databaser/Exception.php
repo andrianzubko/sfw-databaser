@@ -11,13 +11,13 @@ class Exception extends \Exception
      * Adding sqlstate and correct file and line.
      */
     public function __construct(
-        string $driver,
+        string $driverName,
         protected string $sqlMessage = 'Unknown error',
         protected string $sqlState = 'HY000'
     ) {
         parent::__construct(
             sprintf("%s: [%s] %s",
-                $driver,
+                $driverName,
                 $this->sqlState,
                 $this->sqlMessage
             )

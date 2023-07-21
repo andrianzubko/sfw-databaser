@@ -8,32 +8,70 @@ namespace SFW\Databaser;
 class PgsqlResult extends Result
 {
     /**
-     * Gets result set from statement.
+     * Gets column names and looking for json types.
      */
-    public function __construct(protected \PgSql\Result|false $result)
+    public function __construct(protected \PgSql\Result $result)
     {
-        $this->rows = pg_fetch_all($this->result, PGSQL_NUM);
+        $numFields = pg_num_fields($this->result);
 
-        if ($this->rows) {
-            foreach ($this->rows[0] as $i => $value) {
-                $this->names[$i] = pg_field_name($this->result, $i);
+        if ($numFields) {
+            for ($i = 0; $i < $numFields; $i++) {
+                $this->colNames[$i] = pg_field_name($this->result, $i);
 
                 if (pg_field_type($this->result, $i) === 'json') {
-                    foreach ($this->rows as $j => $row) {
-                        if (isset($row[$i])) {
-                            $this->rows[$j][$i] = json_decode($row[$i], true);
-                        }
-                    }
+                    $this->jsonCols[$i] = true;
                 }
             }
         }
     }
 
     /**
-     * Returns number of affected rows.
+     * Fetches all result rows without corrections as numeric array.
+     */
+    protected function fetchAllRows(): array
+    {
+        return pg_fetch_all($this->result, PGSQL_NUM);
+    }
+
+    /**
+     * Fetches next result row without corrections as numeric array.
+     */
+    protected function fetchNextRows(): array|false
+    {
+        return pg_fetch_row($this->result);
+    }
+
+    /**
+     * Fetches next result column without corrections.
+     */
+    protected function fetchNextColumn(int $i): mixed
+    {
+        return pg_fetch_result($this->result, $i);
+    }
+
+    /**
+     * Moves internal result pointer.
+     */
+    public function seek(int $i = 0): self
+    {
+        pg_result_seek($this->result, $i);
+
+        return $this;
+    }
+
+    /**
+     * Gets number of affected rows.
      */
     public function affectedRows(): int|string
     {
         return pg_affected_rows($this->result);
+    }
+
+    /**
+     * Gets the number of rows in result.
+     */
+    public function numRows(): int|string
+    {
+        return pg_num_rows($this->result);
     }
 }

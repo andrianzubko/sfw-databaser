@@ -15,12 +15,12 @@ class Mysql extends Driver
     /**
      * Driver name.
      */
-    protected string $driver = 'Mysql';
+    protected string $driverName = 'Mysql';
 
     /**
      * Connecting to database on demand.
      *
-     * @throws Exception
+     * Throws Exception
      */
     protected function connect(): void
     {
@@ -51,7 +51,7 @@ class Mysql extends Driver
             );
         } catch (\mysqli_sql_exception $error) {
             throw new Exception(
-                $this->driver,
+                $this->driverName,
                 $error->getMessage(),
                 $error->getSqlState()
             );
@@ -75,21 +75,31 @@ class Mysql extends Driver
      */
     protected function assignResult(object|false $result): Result
     {
-        return new MysqlResult($result, $this->db->affected_rows);
+        if ($result === false) {
+            return (new Result())->setMode($this->mode);
+        }
+
+        return (new MysqlResult($result, $this->db->affected_rows))->setMode($this->mode);
     }
 
     /**
      * Returns the ID of the last inserted row or sequence value.
+     *
+     * Throws Exception
      */
     public function lastInsertId(): int|string|false
     {
+        if (!isset($this->db)) {
+            $this->connect();
+        }
+
         return $this->db->insert_id;
     }
 
     /**
      * Executing bundle queries at once.
      *
-     * @throws Exception
+     * Throws Exception
      */
     protected function executeQueries(string $queries): object|false
     {
@@ -103,7 +113,7 @@ class Mysql extends Driver
             );
         } catch (\mysqli_sql_exception $error) {
             throw new Exception(
-                $this->driver,
+                $this->driverName,
                 $error->getMessage(),
                 $error->getSqlState()
             );

@@ -5,37 +5,51 @@ namespace SFW\Databaser;
 /**
  * Database result handling.
  */
-abstract class Result implements \IteratorAggregate
+class Result implements \IteratorAggregate
 {
     /**
-     * Result rows.
+     * Default mode for fetchAll method.
      */
-    protected array $rows;
+    protected ?int $mode = null;
 
     /**
      * Names of columns in result rows.
      */
-    protected array $names = [];
+    protected array $colNames = [];
 
     /**
-     * Internal result pointer.
+     * Json columns in result rows.
      */
-    protected int $i = 0;
+    protected array $jsonCols = [];
 
     /**
-     * Fetches all result rows as an associative array (default), a numeric array, or object.
+     * Fetches all result rows without corrections as numeric array.
      */
-    public function fetchAll(bool $num = false, bool $assoc = false, bool $object = false): array
+    protected function fetchAllRows(): array
     {
-        $rows = [];
+        return [];
+    }
 
-        foreach ($this->rows as $row) {
-            if ($num) {
-                $rows[] = $row;
-            } elseif ($object) {
-                $rows[] = (object) array_combine($this->names, $row);
-            } else {
-                $rows[] = array_combine($this->names, $row);
+    /**
+     * Fetches all result rows as associative array (default), numeric array, or object.
+     */
+    public function fetchAll(?int $mode = null): array
+    {
+        $mode ??= $this->mode ?? \SFW\Databaser::ASSOC;
+
+        $rows = $this->fetchAllRows();
+
+        foreach ($rows as &$row) {
+            foreach ($this->jsonCols as $i => $true) {
+                if (isset($row[$i])) {
+                    $row[$i] = json_decode($row[$i], true);
+                }
+            }
+
+            if ($mode === \SFW\Databaser::ASSOC) {
+                $row = array_combine($this->colNames, $row);
+            } elseif ($mode === \SFW\Databaser::OBJECT) {
+                $row = (object) array_combine($this->colNames, $row);
             }
         }
 
@@ -43,62 +57,121 @@ abstract class Result implements \IteratorAggregate
     }
 
     /**
-     * Fetch the next row of a result set as an object.
+     * Fetches next result row without corrections as numeric array.
+     */
+    protected function fetchNextRows(): array|false
+    {
+        return false;
+    }
+
+    /**
+     * Fetches next result row as object.
      */
     public function fetchObject(): object|false
     {
-        $row = $this->rows[$this->i++] ?? false;
+        $row = $this->fetchNextRows();
 
-        return $row === false ? false : (object) array_combine($this->names, $row);
+        if ($row === false) {
+            return false;
+        }
+
+        foreach ($this->jsonCols as $i => $true) {
+            if (isset($row[$i])) {
+                $row[$i] = json_decode($row[$i], true);
+            }
+        }
+
+        return (object) array_combine($this->colNames, $row);
     }
 
     /**
-     * Fetch the next row of a result set as an associative array.
+     * Fetches next result row as associative array.
      */
     public function fetchAssoc(): array|false
     {
-        $row = $this->rows[$this->i++] ?? false;
+        $row = $this->fetchNextRows();
 
-        return $row === false ? false : array_combine($this->names, $row);
+        if ($row === false) {
+            return false;
+        }
+
+        foreach ($this->jsonCols as $i => $true) {
+            if (isset($row[$i])) {
+                $row[$i] = json_decode($row[$i], true);
+            }
+        }
+
+        return array_combine($this->colNames, $row);
     }
 
     /**
-     * Fetch the next row of a result set as an numeric array.
+     * Fetches next result row as numeric array.
      */
     public function fetchRow(): array|false
     {
-        return $this->rows[$this->i++] ?? false;
+        $row = $this->fetchNextRows();
+
+        if ($row === false) {
+            return false;
+        }
+
+        foreach ($this->jsonCols as $i => $true) {
+            if (isset($row[$i])) {
+                $row[$i] = json_decode($row[$i], true);
+            }
+        }
+
+        return $row;
     }
 
     /**
-     * Fetch a single column from the next row of a result set.
+     * Fetches next result column without corrections.
      */
-    public function fetchColumn(int $column = 0): mixed
+    protected function fetchNextColumn(int $i): mixed
     {
-        $row = $this->rows[$this->i++] ?? false;
-
-        return $row === false ? false : $row[$column] ?? false;
+        return false;
     }
 
     /**
-     * Move internal result pointer.
+     * Fetches next result column.
      */
-    public function seek(int $i = 0): void
+    public function fetchColumn(int $i = 0): mixed
     {
-        $this->i = $i;
+        $column = $this->fetchNextColumn($i);
+
+        if ($column === false) {
+            return false;
+        }
+
+        if (isset($column, $this->jsonCols[$i])) {
+            return json_decode($column, true);
+        }
+
+        return $column;
     }
 
     /**
-     * Returns number of affected rows.
+     * Moves internal result pointer.
      */
-    abstract public function affectedRows(): int|string;
+    public function seek(int $i = 0): self
+    {
+        return $this;
+    }
 
     /**
-     * Returns the number of rows in a result.
+     * Gets number of affected rows.
+     */
+    public function affectedRows(): int|string
+    {
+        return 0;
+    }
+
+    /**
+     * Gets the number of rows in result.
      */
     public function numRows(): int|string
     {
-        return count($this->rows);
+        return 0;
     }
 
     /**
@@ -107,5 +180,15 @@ abstract class Result implements \IteratorAggregate
     public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->fetchAll());
+    }
+
+    /**
+     * Sets default mode for fetchAll method.
+     */
+    public function setMode(?int $mode): self
+    {
+        $this->mode = $mode;
+
+        return $this;
     }
 }

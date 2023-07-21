@@ -28,6 +28,16 @@ abstract class Driver
     protected const ROLLBACK = 3;
 
     /**
+     * Driver name.
+     */
+    protected string $driverName;
+
+    /**
+     * Default mode for fetchAll method of Result class.
+     */
+    protected ?int $mode = null;
+
+    /**
      * Queries queue.
      */
     protected array $queries = [];
@@ -52,6 +62,10 @@ abstract class Driver
      */
     public function __construct(protected array $options = [], protected mixed $profiler = null)
     {
+        if (isset($this->options['mode'])) {
+            $this->mode = $this->options['mode'];
+        }
+
         register_shutdown_function(
             function () {
                 register_shutdown_function(
@@ -70,7 +84,7 @@ abstract class Driver
     /**
      * Connecting to database on demand.
      *
-     * @throws Exception
+     * Throws Exception
      */
     abstract protected function connect(): void;
 
@@ -82,7 +96,7 @@ abstract class Driver
     /**
      * Begin transaction.
      *
-     * @throws Exception
+     * Throws Exception
      */
     public function begin(?string $isolation = null): void
     {
@@ -98,7 +112,7 @@ abstract class Driver
     /**
      * Commit transaction. If nothing was after begin, then ignore begin.
      *
-     * @throws Exception
+     * Throws Exception
      */
     public function commit(): void
     {
@@ -116,7 +130,7 @@ abstract class Driver
     /**
      * Rollback transaction.
      *
-     * @throws Exception
+     * Throws Exception
      */
     public function rollback(?string $to = null): void
     {
@@ -132,7 +146,7 @@ abstract class Driver
     /**
      * Queueing query.
      *
-     * @throws Exception
+     * Throws Exception
      */
     public function queue(array|string $queries): void
     {
@@ -153,7 +167,7 @@ abstract class Driver
     /**
      * Executing query and return result.
      *
-     * @throws Exception
+     * Throws Exception
      */
     public function query(array|string $queries): Result|false
     {
@@ -167,7 +181,7 @@ abstract class Driver
     /**
      * Executing all queued queries.
      *
-     * @throws Exception
+     * Throws Exception
      */
     public function flush(): void
     {
@@ -176,23 +190,29 @@ abstract class Driver
 
     /**
      * Returns the ID of the last inserted row or sequence value.
+     *
+     * Throws Exception
      */
     public function lastInsertId(): int|string|false
     {
+        if (!isset($this->db)) {
+            $this->connect();
+        }
+
         return false;
     }
 
     /**
      * Executing bundle queries at once.
      *
-     * @throws Exception
+     * Throws Exception
      */
     abstract protected function executeQueries(string $queries): object|false;
 
     /**
      * Executing all queued queries and result returning.
      *
-     * @throws Exception
+     * Throws Exception
      */
     protected function execute(): object|false
     {
@@ -227,7 +247,7 @@ abstract class Driver
             $result = $this->executeQueries(implode(';', $queries));
         } catch (Exception $error) {
             throw new Exception(
-                $this->driver,
+                $this->driverName,
                 $error->getSqlMessage(),
                 $error->getSqlState()
             );
@@ -250,11 +270,11 @@ abstract class Driver
         if (is_scalar($numbers)) {
             return (string) (double) $numbers;
         } elseif (is_array($numbers)) {
-            foreach ($numbers as $i => $value) {
+            foreach ($numbers as &$value) {
                 if (isset($value)) {
-                    $numbers[$i] = (double) $value;
+                    $value = (double) $value;
                 } else {
-                    $numbers[$i] = $null;
+                    $value = $null;
                 }
             }
 
@@ -272,7 +292,7 @@ abstract class Driver
     /**
      * Formatting and escaping strings for queries.
      *
-     * @throws Exception
+     * Throws Exception
      */
     public function string(mixed $strings, string $null = 'NULL'): string
     {
@@ -283,11 +303,11 @@ abstract class Driver
         if (is_scalar($strings)) {
             return $this->escapeString((string) $strings);
         } elseif (is_array($strings)) {
-            foreach ($strings as $i => $value) {
+            foreach ($strings as &$value) {
                 if (isset($value)) {
-                    $strings[$i] = $this->escapeString((string) $value);
+                    $value = $this->escapeString((string) $value);
                 } else {
-                    $strings[$i] = $null;
+                    $value = $null;
                 }
             }
 
@@ -350,7 +370,15 @@ abstract class Driver
     }
 
     /**
-     * Getting timer of executed queries.
+     * Gets driver name.
+     */
+    public function getDriverName(): string
+    {
+        return $this->driverName;
+    }
+
+    /**
+     * Gets timer of executed queries.
      */
     public function getTimer(): float
     {
@@ -358,10 +386,20 @@ abstract class Driver
     }
 
     /**
-     * Getting count of executed queries.
+     * Gets count of executed queries.
      */
     public function getCounter(): int
     {
         return $this->counter;
+    }
+
+    /**
+     * Sets default mode for fetchAll method of Result class.
+     */
+    public function setMode(?int $mode): self
+    {
+        $this->mode = $mode;
+
+        return $this;
     }
 }

@@ -15,12 +15,12 @@ class Pgsql extends Driver
     /**
      * Driver name.
      */
-    protected string $driver = 'Postgresql';
+    protected string $driverName = 'Postgresql';
 
     /**
      * Connecting to database on demand.
      *
-     * @throws Exception
+     * Throws Exception
      */
     protected function connect(): void
     {
@@ -39,7 +39,7 @@ class Pgsql extends Driver
 
         if ($db === false) {
             throw new Exception(
-                $this->driver, 'Error in the process of establishing a connection'
+                $this->driverName, 'Error in the process of establishing a connection'
             );
         }
 
@@ -65,13 +65,17 @@ class Pgsql extends Driver
      */
     protected function assignResult(object|false $result): Result
     {
-        return new PgsqlResult($result);
+        if ($result === false) {
+            return (new Result())->setMode($this->mode);
+        }
+
+        return (new PgsqlResult($result))->setMode($this->mode);
     }
 
     /**
      * Executing bundle queries at once.
      *
-     * @throws Exception
+     * Throws Exception
      */
     protected function executeQueries(string $queries): object|false
     {
@@ -82,9 +86,9 @@ class Pgsql extends Driver
         }
 
         if (preg_match('/^ERROR:\s*([\dA-Z]{5}):\s*(.+)/u', pg_last_error($this->db), $M)) {
-            throw new Exception($this->driver, $M[2], $M[1]);
+            throw new Exception($this->driverName, $M[2], $M[1]);
         } else {
-            throw new Exception($this->driver, $M[0]);
+            throw new Exception($this->driverName, $M[0]);
         }
     }
 
