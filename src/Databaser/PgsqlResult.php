@@ -36,7 +36,7 @@ class PgsqlResult extends Result
     /**
      * Fetches next result row without corrections as numeric array.
      */
-    protected function fetchNextRows(): array|false
+    protected function fetchNextRow(): array|false
     {
         return pg_fetch_row($this->result);
     }

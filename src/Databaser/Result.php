@@ -59,7 +59,7 @@ class Result implements \IteratorAggregate
     /**
      * Fetches next result row without corrections as numeric array.
      */
-    protected function fetchNextRows(): array|false
+    protected function fetchNextRow(): array|false
     {
         return false;
     }
@@ -69,7 +69,7 @@ class Result implements \IteratorAggregate
      */
     public function fetchObject(): object|false
     {
-        $row = $this->fetchNextRows();
+        $row = $this->fetchNextRow();
 
         if ($row === false) {
             return false;
@@ -89,7 +89,7 @@ class Result implements \IteratorAggregate
      */
     public function fetchAssoc(): array|false
     {
-        $row = $this->fetchNextRows();
+        $row = $this->fetchNextRow();
 
         if ($row === false) {
             return false;
@@ -109,7 +109,7 @@ class Result implements \IteratorAggregate
      */
     public function fetchRow(): array|false
     {
-        $row = $this->fetchNextRows();
+        $row = $this->fetchNextRow();
 
         if ($row === false) {
             return false;

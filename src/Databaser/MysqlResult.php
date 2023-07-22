@@ -33,7 +33,7 @@ class MysqlResult extends Result
     /**
      * Fetches next result row without corrections as numeric array.
      */
-    protected function fetchNextRows(): array|false
+    protected function fetchNextRow(): array|false
     {
         return $this->result->fetch_row() ?? false;
     }
