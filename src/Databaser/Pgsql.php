@@ -26,13 +26,12 @@ class Pgsql extends Driver
     {
         $db = (($this->options['persistent'] ?? false) ? 'pg_pconnect' : 'pg_connect')(
             sprintf(
-                "host=%s port=%s dbname=%s user=%s password=%s options='--client_encoding=%s'",
+                "host=%s port=%s dbname=%s user=%s password=%s",
                     $this->options['host'] ?? 'localhost',
                     $this->options['port'] ?? 5432,
                     $this->options['db'] ?? '',
                     $this->options['user'] ?? '',
-                    $this->options['pass'] ?? '',
-                    $this->options['charset'] ?? 'utf-8'
+                    $this->options['pass'] ?? ''
             ),
             PGSQL_CONNECT_FORCE_NEW
         );
@@ -44,6 +43,14 @@ class Pgsql extends Driver
         }
 
         pg_set_error_verbosity($db, PGSQL_ERRORS_VERBOSE);
+
+        $charset = $this->options['charset'] ?? 'utf-8';
+
+        if (pg_set_client_encoding($db, $charset) === -1) {
+            throw new Exception(
+                $this->driverName, "Unable to set charset $charset"
+            );
+        }
 
         $this->db = $db;
     }
