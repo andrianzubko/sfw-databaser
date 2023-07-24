@@ -23,7 +23,7 @@ class MysqlResult extends Result
     }
 
     /**
-     * Fetches all result rows without corrections as numeric array.
+     * Fetches all result rows as numeric array.
      */
     protected function fetchAllRows(): array
     {
@@ -31,7 +31,7 @@ class MysqlResult extends Result
     }
 
     /**
-     * Fetches next result row without corrections as numeric array.
+     * Fetches next result row as numeric array.
      */
     protected function fetchNextRow(): array|false
     {
@@ -39,11 +39,25 @@ class MysqlResult extends Result
     }
 
     /**
-     * Fetches next result column without corrections.
+     * Fetches next result row column.
      */
-    protected function fetchNextColumn(int $i): mixed
+    protected function fetchNextRowColumn(int $i): mixed
     {
         return $this->result->fetch_column($i);
+    }
+
+    /**
+     * Fetches all result rows columns.
+     */
+    protected function fetchAllRowsColumns(int $i): array
+    {
+        $columns = [];
+
+        while (($column = $this->result->fetch_column($i)) !== false) {
+            $columns[] = $column;
+        }
+
+        return $columns;
     }
 
     /**
@@ -65,7 +79,7 @@ class MysqlResult extends Result
     }
 
     /**
-     * Gets the number of rows in result.
+     * Gets the number of result rows.
      */
     public function numRows(): int|string
     {

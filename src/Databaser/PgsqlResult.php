@@ -26,7 +26,7 @@ class PgsqlResult extends Result
     }
 
     /**
-     * Fetches all result rows without corrections as numeric array.
+     * Fetches all result rows as numeric array.
      */
     protected function fetchAllRows(): array
     {
@@ -34,7 +34,7 @@ class PgsqlResult extends Result
     }
 
     /**
-     * Fetches next result row without corrections as numeric array.
+     * Fetches next result row as numeric array.
      */
     protected function fetchNextRow(): array|false
     {
@@ -42,11 +42,19 @@ class PgsqlResult extends Result
     }
 
     /**
-     * Fetches next result column without corrections.
+     * Fetches next result row column.
      */
-    protected function fetchNextColumn(int $i): mixed
+    protected function fetchNextRowColumn(int $i): mixed
     {
         return pg_fetch_result($this->result, $i);
+    }
+
+    /**
+     * Fetches all result rows columns.
+     */
+    protected function fetchAllRowsColumns(int $i): array
+    {
+        return pg_fetch_all_columns($this->result, $i);
     }
 
     /**
@@ -68,7 +76,7 @@ class PgsqlResult extends Result
     }
 
     /**
-     * Gets the number of rows in result.
+     * Gets the number of result rows.
      */
     public function numRows(): int|string
     {

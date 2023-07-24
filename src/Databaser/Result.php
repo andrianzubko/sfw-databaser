@@ -23,7 +23,7 @@ class Result implements \IteratorAggregate
     protected array $jsonCols = [];
 
     /**
-     * Fetches all result rows without corrections as numeric array.
+     * Fetches all result rows as numeric array.
      */
     protected function fetchAllRows(): array
     {
@@ -31,7 +31,7 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     * Fetches all result rows as associative array (default), numeric array, or object.
+     * Fetches all result rows as associative array, numeric array, or object.
      */
     public function fetchAll(?int $mode = null): array
     {
@@ -57,51 +57,11 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     * Fetches next result row without corrections as numeric array.
+     * Fetches next result row as numeric array.
      */
     protected function fetchNextRow(): array|false
     {
         return false;
-    }
-
-    /**
-     * Fetches next result row as object.
-     */
-    public function fetchObject(): object|false
-    {
-        $row = $this->fetchNextRow();
-
-        if ($row === false) {
-            return false;
-        }
-
-        foreach ($this->jsonCols as $i => $true) {
-            if (isset($row[$i])) {
-                $row[$i] = json_decode($row[$i], true);
-            }
-        }
-
-        return (object) array_combine($this->colNames, $row);
-    }
-
-    /**
-     * Fetches next result row as associative array.
-     */
-    public function fetchAssoc(): array|false
-    {
-        $row = $this->fetchNextRow();
-
-        if ($row === false) {
-            return false;
-        }
-
-        foreach ($this->jsonCols as $i => $true) {
-            if (isset($row[$i])) {
-                $row[$i] = json_decode($row[$i], true);
-            }
-        }
-
-        return array_combine($this->colNames, $row);
     }
 
     /**
@@ -125,19 +85,59 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     * Fetches next result column without corrections.
+     * Fetches next result row as associative array.
      */
-    protected function fetchNextColumn(int $i): mixed
+    public function fetchAssoc(): array|false
+    {
+        $row = $this->fetchNextRow();
+
+        if ($row === false) {
+            return false;
+        }
+
+        foreach ($this->jsonCols as $i => $true) {
+            if (isset($row[$i])) {
+                $row[$i] = json_decode($row[$i], true);
+            }
+        }
+
+        return array_combine($this->colNames, $row);
+    }
+
+    /**
+     * Fetches next result row as object.
+     */
+    public function fetchObject(): object|false
+    {
+        $row = $this->fetchNextRow();
+
+        if ($row === false) {
+            return false;
+        }
+
+        foreach ($this->jsonCols as $i => $true) {
+            if (isset($row[$i])) {
+                $row[$i] = json_decode($row[$i], true);
+            }
+        }
+
+        return (object) array_combine($this->colNames, $row);
+    }
+
+    /**
+     * Fetches next result row column.
+     */
+    protected function fetchNextRowColumn(int $i): mixed
     {
         return false;
     }
 
     /**
-     * Fetches next result column.
+     * Fetches next result row column.
      */
     public function fetchColumn(int $i = 0): mixed
     {
-        $column = $this->fetchNextColumn($i);
+        $column = $this->fetchNextRowColumn($i);
 
         if ($column === false) {
             return false;
@@ -148,6 +148,32 @@ class Result implements \IteratorAggregate
         }
 
         return $column;
+    }
+
+    /**
+     * Fetches all result rows columns.
+     */
+    protected function fetchAllRowsColumns(int $i): array
+    {
+        return [];
+    }
+
+    /**
+     * Fetches all result rows columns.
+     */
+    public function fetchAllColumns(int $i = 0): array
+    {
+        $columns = $this->fetchAllRowsColumns($i);
+
+        if (isset($this->jsonCols[$i])) {
+            foreach ($columns as &$column) {
+                if (isset($column)) {
+                    $column = json_decode($column, true);
+                }
+            }
+        }
+
+        return $columns;
     }
 
     /**
@@ -167,7 +193,7 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     * Gets the number of rows in result.
+     * Gets the number of result rows.
      */
     public function numRows(): int|string
     {
@@ -175,7 +201,7 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     * Gets result set iterator.
+     * Gets iterator with result rows.
      */
     public function getIterator(): \Traversable
     {
