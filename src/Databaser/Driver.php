@@ -50,12 +50,12 @@ abstract class Driver
     /**
      * Timer of executed queries.
      */
-    protected float $timer = 0;
+    protected static float $timer = 0;
 
     /**
      * Count of executed queries.
      */
-    protected int $counter = 0;
+    protected static int $counter = 0;
 
     /**
      * Clearing at shutdown if still in transaction.
@@ -239,7 +239,7 @@ abstract class Driver
 
         $this->queries = [];
 
-        $this->counter += 1;
+        self::$counter += 1;
 
         $timer = gettimeofday(true);
 
@@ -252,7 +252,7 @@ abstract class Driver
                 $error->getSqlState()
             );
         } finally {
-            $this->timer += $timer = gettimeofday(true) - $timer;
+            self::$timer += $timer = gettimeofday(true) - $timer;
 
             if (isset($this->profiler)) {
                 ($this->profiler)($timer, $queries);
@@ -382,7 +382,7 @@ abstract class Driver
      */
     public function getTimer(): float
     {
-        return $this->timer;
+        return self::$timer;
     }
 
     /**
@@ -390,7 +390,7 @@ abstract class Driver
      */
     public function getCounter(): int
     {
-        return $this->counter;
+        return self::$counter;
     }
 
     /**
