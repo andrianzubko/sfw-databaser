@@ -201,6 +201,14 @@ class Result implements \IteratorAggregate
     }
 
     /**
+     * Gets column names of result rows.
+     */
+    public function getColNames(): array
+    {
+        return $this->colNames;
+    }
+
+    /**
      * Gets iterator with result rows.
      */
     public function getIterator(): \Traversable
