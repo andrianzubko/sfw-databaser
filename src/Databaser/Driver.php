@@ -60,8 +60,10 @@ abstract class Driver
     /**
      * Clearing at shutdown if still in transaction.
      */
-    public function __construct(protected array $options = [], protected mixed $profiler = null)
-    {
+    public function __construct(
+        protected array $options = [],
+        protected mixed $profiler = null
+    ) {
         if (isset($this->options['mode'])) {
             $this->mode = $this->options['mode'];
         }
@@ -84,7 +86,7 @@ abstract class Driver
     /**
      * Connecting to database on demand.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     abstract protected function connect(): void;
 
@@ -96,7 +98,7 @@ abstract class Driver
     /**
      * Begin transaction.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     public function begin(?string $isolation = null): void
     {
@@ -112,7 +114,7 @@ abstract class Driver
     /**
      * Commit transaction. If nothing was after begin, then ignore begin.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     public function commit(): void
     {
@@ -130,7 +132,7 @@ abstract class Driver
     /**
      * Rollback transaction.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     public function rollback(?string $to = null): void
     {
@@ -146,7 +148,7 @@ abstract class Driver
     /**
      * Queueing query.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     public function queue(array|string $queries): void
     {
@@ -167,7 +169,7 @@ abstract class Driver
     /**
      * Executing query and return result.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     public function query(array|string $queries): Result|false
     {
@@ -181,7 +183,7 @@ abstract class Driver
     /**
      * Executing all queued queries.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     public function flush(): void
     {
@@ -191,7 +193,7 @@ abstract class Driver
     /**
      * Returns the ID of the last inserted row or sequence value.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     public function lastInsertId(): int|string|false
     {
@@ -205,14 +207,14 @@ abstract class Driver
     /**
      * Executing bundle queries at once.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     abstract protected function executeQueries(string $queries): object|false;
 
     /**
      * Executing all queued queries and result returning.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     protected function execute(): object|false
     {
@@ -244,7 +246,9 @@ abstract class Driver
         $timer = gettimeofday(true);
 
         try {
-            $result = $this->executeQueries(implode(';', $queries));
+            $result = $this->executeQueries(
+                implode(';', $queries)
+            );
         } catch (Exception $error) {
             throw new Exception(
                 $this->driverName,
@@ -269,7 +273,9 @@ abstract class Driver
     {
         if (is_scalar($numbers)) {
             return (string) (double) $numbers;
-        } elseif (is_array($numbers)) {
+        } elseif (
+            is_array($numbers)
+        ) {
             foreach ($numbers as &$value) {
                 if (isset($value)) {
                     $value = (double) $value;
@@ -292,7 +298,7 @@ abstract class Driver
     /**
      * Formatting and escaping strings for queries.
      *
-     * Throws \SFW\Databaser\Exception
+     * @throws Exception
      */
     public function string(mixed $strings, string $null = 'NULL'): string
     {
@@ -302,7 +308,9 @@ abstract class Driver
 
         if (is_scalar($strings)) {
             return $this->escapeString((string) $strings);
-        } elseif (is_array($strings)) {
+        } elseif (
+            is_array($strings)
+        ) {
             foreach ($strings as &$value) {
                 if (isset($value)) {
                     $value = $this->escapeString((string) $value);

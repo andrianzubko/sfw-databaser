@@ -48,7 +48,9 @@ class Result implements \IteratorAggregate
 
             if ($mode === \SFW\Databaser::ASSOC) {
                 $row = array_combine($this->colNames, $row);
-            } elseif ($mode === \SFW\Databaser::OBJECT) {
+            } elseif (
+                $mode === \SFW\Databaser::OBJECT
+            ) {
                 $row = (object) array_combine($this->colNames, $row);
             }
         }
