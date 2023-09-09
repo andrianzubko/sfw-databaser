@@ -8,7 +8,7 @@ namespace SFW\Databaser;
 class Exception extends \Exception
 {
     /**
-     * Adding sqlstate and correct file and line.
+     * Adding driver name and sqlstate.
      */
     public function __construct(
         string $driverName,
@@ -22,16 +22,6 @@ class Exception extends \Exception
                 $this->sqlMessage
             )
         );
-
-        foreach ($this->getTrace() as $trace) {
-            if (!str_starts_with($trace['file'], dirname(__DIR__))) {
-                $this->file = $trace['file'];
-
-                $this->line = $trace['line'];
-
-                break;
-            }
-        }
     }
 
     /**
