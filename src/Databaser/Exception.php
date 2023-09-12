@@ -2,38 +2,35 @@
 
 namespace SFW\Databaser;
 
-/**
- * Exceptions handler.
- */
-class Exception extends \Exception
+class Exception extends \SFW\Exception
 {
     /**
-     * Adding driver name and sqlstate.
+     * Code which identifies SQL error condition.
      */
-    public function __construct(
-        string $driverName,
-        protected string $sqlMessage = 'Unknown error',
-        protected string $sqlState = 'HY000'
-    ) {
-        parent::__construct(
-            sprintf("%s: [%s] %s",
-                $driverName,
-                $this->sqlState,
-                $this->sqlMessage
-            )
-        );
-    }
+    protected string $sqlState = 'HY000';
 
     /**
-     * Get sql message.
+     * Adds sqlstate to message.
      */
-    public function getSqlMessage(): string
+    public function addSqlStateToMessage(): self
     {
-        return $this->sqlMessage;
+        $this->message = sprintf('[%s] %s', $this->sqlState, $this->message);
+
+        return $this;
     }
 
     /**
-     * Get sql state.
+     * Sets sqlstate.
+     */
+    public function setSqlState(string $sqlState): self
+    {
+        $this->sqlState = $sqlState;
+
+        return $this;
+    }
+
+    /**
+     * Gets sqlstate.
      */
     public function getSqlState(): string
     {

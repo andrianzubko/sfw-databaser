@@ -28,11 +28,6 @@ abstract class Driver
     protected const ROLLBACK = 3;
 
     /**
-     * Driver name.
-     */
-    protected string $driverName;
-
-    /**
      * Default mode for fetchAll method of Result class.
      */
     protected ?int $mode = null;
@@ -75,7 +70,7 @@ abstract class Driver
                         if ($this->inTrans) {
                             try {
                                 $this->rollback();
-                            } catch (Exception) {}
+                            } catch (RuntimeException) {}
                         }
                     }
                 );
@@ -86,7 +81,7 @@ abstract class Driver
     /**
      * Connecting to database on demand.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     abstract protected function connect(): void;
 
@@ -98,7 +93,7 @@ abstract class Driver
     /**
      * Begin transaction.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function begin(?string $isolation = null): void
     {
@@ -114,7 +109,7 @@ abstract class Driver
     /**
      * Commit transaction. If nothing was after begin, then ignore begin.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function commit(): void
     {
@@ -132,7 +127,7 @@ abstract class Driver
     /**
      * Rollback transaction.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function rollback(?string $to = null): void
     {
@@ -148,7 +143,7 @@ abstract class Driver
     /**
      * Queueing query.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function queue(array|string $queries): void
     {
@@ -169,7 +164,7 @@ abstract class Driver
     /**
      * Executing query and return result.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function query(array|string $queries): Result|false
     {
@@ -183,7 +178,7 @@ abstract class Driver
     /**
      * Executing all queued queries.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function flush(): void
     {
@@ -193,7 +188,7 @@ abstract class Driver
     /**
      * Returns the ID of the last inserted row or sequence value.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function lastInsertId(): int|string|false
     {
@@ -207,14 +202,14 @@ abstract class Driver
     /**
      * Executing bundle queries at once.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     abstract protected function executeQueries(string $queries): object|false;
 
     /**
      * Executing all queued queries and result returning.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     protected function execute(): object|false
     {
@@ -246,15 +241,7 @@ abstract class Driver
         $timer = gettimeofday(true);
 
         try {
-            $result = $this->executeQueries(
-                implode(';', $queries)
-            );
-        } catch (Exception $error) {
-            throw new Exception(
-                $this->driverName,
-                $error->getSqlMessage(),
-                $error->getSqlState()
-            );
+            $result = $this->executeQueries(implode(';', $queries));
         } finally {
             self::$timer += $timer = gettimeofday(true) - $timer;
 
@@ -298,7 +285,7 @@ abstract class Driver
     /**
      * Formatting and escaping strings for queries.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function string(mixed $strings, string $null = 'NULL'): string
     {
@@ -375,14 +362,6 @@ abstract class Driver
     public function spaces(array $expressions): string
     {
         return implode(' ', $expressions);
-    }
-
-    /**
-     * Gets driver name.
-     */
-    public function getDriverName(): string
-    {
-        return $this->driverName;
     }
 
     /**

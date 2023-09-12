@@ -13,14 +13,9 @@ class Pgsql extends Driver
     protected \PgSql\Connection $db;
 
     /**
-     * Driver name.
-     */
-    protected string $driverName = 'Postgresql';
-
-    /**
      * Connecting to database on demand.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     protected function connect(): void
     {
@@ -37,9 +32,8 @@ class Pgsql extends Driver
         );
 
         if ($db === false) {
-            throw new Exception(
-                $this->driverName, 'Error in the process of establishing a connection'
-            );
+            throw (new RuntimeException('Error in the process of establishing a connection'))
+                ->addSqlStateToMessage();
         }
 
         pg_set_error_verbosity($db, PGSQL_ERRORS_VERBOSE);
@@ -47,9 +41,8 @@ class Pgsql extends Driver
         $charset = $this->options['charset'] ?? 'utf-8';
 
         if (pg_set_client_encoding($db, $charset) === -1) {
-            throw new Exception(
-                $this->driverName, "Unable to set charset $charset"
-            );
+            throw (new RuntimeException("Unable to set charset $charset"))
+                ->addSqlStateToMessage();
         }
 
         $this->db = $db;
@@ -73,16 +66,18 @@ class Pgsql extends Driver
     protected function assignResult(object|false $result): Result
     {
         if ($result === false) {
-            return (new Result())->setMode($this->mode);
+            $result = new Result();
+        } else {
+            $result = new PgsqlResult($result);
         }
 
-        return (new PgsqlResult($result))->setMode($this->mode);
+        return $result->setMode($this->mode);
     }
 
     /**
      * Executing bundle queries at once.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     protected function executeQueries(string $queries): object|false
     {
@@ -92,10 +87,15 @@ class Pgsql extends Driver
             return $result;
         }
 
-        if (preg_match('/^ERROR:\s*([\dA-Z]{5}):\s*(.+)/u', pg_last_error($this->db), $M)) {
-            throw new Exception($this->driverName, $M[2], $M[1]);
+        if (preg_match('/^ERROR:\s*([\dA-Z]{5}):\s*(.+)/u',
+                pg_last_error($this->db), $M)
+        ) {
+            throw (new RuntimeException($M[2]))
+                ->setSqlState($M[1])
+                ->addSqlStateToMessage();
         } else {
-            throw new Exception($this->driverName, $M[0]);
+            throw (new RuntimeException($M[0]))
+                ->addSqlStateToMessage();
         }
     }
 

@@ -15,6 +15,7 @@
         }
     ],
     "require": {
-        "php": "^8.2"
+        "php": "^8.2",
+        "andrianzubko/sfw-exception": "^0"
     }
 }

@@ -13,14 +13,9 @@ class Mysql extends Driver
     protected \mysqli $db;
 
     /**
-     * Driver name.
-     */
-    protected string $driverName = 'Mysql';
-
-    /**
      * Connecting to database on demand.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     protected function connect(): void
     {
@@ -50,11 +45,9 @@ class Mysql extends Driver
                 $this->options['charset'] ?? 'utf8mb4'
             );
         } catch (\mysqli_sql_exception $error) {
-            throw new Exception(
-                $this->driverName,
-                $error->getMessage(),
-                $error->getSqlState()
-            );
+            throw (new RuntimeException($error->getMessage()))
+                ->setSqlState($error->getSqlState())
+                ->addSqlStateToMessage();
         }
     }
 
@@ -76,17 +69,18 @@ class Mysql extends Driver
     protected function assignResult(object|false $result): Result
     {
         if ($result === false) {
-            return (new Result())->setMode($this->mode);
+            $result = new Result();
+        } else {
+            $result = new MysqlResult($result, $this->db->affected_rows);
         }
 
-        return (new MysqlResult($result, $this->db->affected_rows))
-            ->setMode($this->mode);
+        return $result->setMode($this->mode);
     }
 
     /**
      * Returns the ID of the last inserted row or sequence value.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public function lastInsertId(): int|string|false
     {
@@ -100,7 +94,7 @@ class Mysql extends Driver
     /**
      * Executing bundle queries at once.
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     protected function executeQueries(string $queries): object|false
     {
@@ -113,11 +107,9 @@ class Mysql extends Driver
                 $this->db->next_result()
             );
         } catch (\mysqli_sql_exception $error) {
-            throw new Exception(
-                $this->driverName,
-                $error->getMessage(),
-                $error->getSqlState()
-            );
+            throw (new RuntimeException($error->getMessage()))
+                ->setSqlState($error->getSqlState())
+                ->addSqlStateToMessage();
         }
 
         return $result;
