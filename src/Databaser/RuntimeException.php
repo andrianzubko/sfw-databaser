@@ -2,4 +2,7 @@
 
 namespace SFW\Databaser;
 
-class RuntimeException extends Exception {}
+class RuntimeException extends \SFW\RuntimeException
+{
+    use ExceptionTrait;
+}
