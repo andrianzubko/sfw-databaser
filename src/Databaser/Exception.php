@@ -2,7 +2,20 @@
 
 namespace SFW\Databaser;
 
-class Exception extends \SFW\Exception
+interface Exception extends \SFW\Exception
 {
-    use ExceptionTrait;
+    /**
+     * Adds sqlstate to message.
+     */
+    public function addSqlStateToMessage(): self;
+
+    /**
+     * Sets sqlstate.
+     */
+    public function setSqlState(string $sqlState): self;
+
+    /**
+     * Gets sqlstate.
+     */
+    public function getSqlState(): string;
 }

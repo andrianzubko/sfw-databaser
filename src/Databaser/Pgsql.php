@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpComposerExtensionStubsInspection */
 
 namespace SFW\Databaser;
 
@@ -65,10 +65,10 @@ class Pgsql extends Driver
      */
     protected function assignResult(object|false $result): Result
     {
-        if ($result === false) {
-            $result = new Result();
-        } else {
+        if ($result instanceof \PgSql\Result) {
             $result = new PgsqlResult($result);
+        } else {
+            $result = new Result();
         }
 
         return $result->setMode($this->mode);

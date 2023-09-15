@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpComposerExtensionStubsInspection */
 
 namespace SFW\Databaser;
 
@@ -68,10 +68,10 @@ class Mysql extends Driver
      */
     protected function assignResult(object|false $result): Result
     {
-        if ($result === false) {
-            $result = new Result();
-        } else {
+        if ($result instanceof \mysqli_result) {
             $result = new MysqlResult($result, $this->db->affected_rows);
+        } else {
+            $result = new Result();
         }
 
         return $result->setMode($this->mode);
