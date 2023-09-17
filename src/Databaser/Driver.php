@@ -28,6 +28,11 @@ abstract class Driver
     protected const ROLLBACK = 3;
 
     /**
+     * External profiler for queries.
+     */
+    protected ?\Closure $profiler = null;
+
+    /**
      * Default mode for fetchAll method of Result class.
      */
     protected ?int $mode = null;
@@ -55,10 +60,7 @@ abstract class Driver
     /**
      * Clearing at shutdown if still in transaction.
      */
-    public function __construct(
-        protected array $options = [],
-        protected mixed $profiler = null
-    ) {
+    public function __construct(protected array $options = []) {
         if (isset($this->options['mode'])) {
             $this->mode = $this->options['mode'];
         }
@@ -378,6 +380,16 @@ abstract class Driver
     public function getCounter(): int
     {
         return self::$counter;
+    }
+
+    /**
+     * Sets external profiler for queries.
+     */
+    public function setProfiler(callable $profiler): self
+    {
+        $this->profiler = $profiler(...);
+
+        return $this;
     }
 
     /**
