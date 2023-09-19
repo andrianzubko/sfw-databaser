@@ -72,16 +72,6 @@ abstract class Driver
                         $this->rollback();
                     } catch (Exception) {}
                 }
-
-                register_shutdown_function(
-                    function () {
-                        if ($this->inTrans) {
-                            try {
-                                $this->rollback();
-                            } catch (Exception) {}
-                        }
-                    }
-                );
             }
         );
     }
