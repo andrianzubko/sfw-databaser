@@ -379,6 +379,14 @@ abstract class Driver
     }
 
     /**
+     * Gets transaction status.
+     */
+    public function isInTrans(): bool
+    {
+        return $this->inTrans;
+    }
+
+    /**
      * Sets external profiler for queries.
      */
     public function setProfiler(callable $profiler): self
