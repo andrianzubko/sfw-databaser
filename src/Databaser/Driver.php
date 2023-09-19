@@ -67,12 +67,18 @@ abstract class Driver
 
         register_shutdown_function(
             function () {
+                if ($this->inTrans) {
+                    try {
+                        $this->rollback();
+                    } catch (Exception) {}
+                }
+
                 register_shutdown_function(
                     function () {
                         if ($this->inTrans) {
                             try {
                                 $this->rollback();
-                            } catch (RuntimeException) {}
+                            } catch (Exception) {}
                         }
                     }
                 );
