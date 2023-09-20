@@ -81,7 +81,7 @@ abstract class Driver
      *
      * @throws RuntimeException
      */
-    abstract protected function connect(): void;
+    abstract protected function connect(): self;
 
     /**
      * Begin command is different at different databases.
@@ -93,7 +93,7 @@ abstract class Driver
      *
      * @throws RuntimeException
      */
-    public function begin(?string $isolation = null): void
+    public function begin(?string $isolation = null): self
     {
         $this->execute();
 
@@ -102,6 +102,8 @@ abstract class Driver
         }
 
         $this->queries[] = [self::BEGIN, $this->makeBeginCommand($isolation)];
+
+        return $this;
     }
 
     /**
@@ -109,7 +111,7 @@ abstract class Driver
      *
      * @throws RuntimeException
      */
-    public function commit(): void
+    public function commit(): self
     {
         if ($this->queries
             && end($this->queries)[0] === self::BEGIN
@@ -120,6 +122,8 @@ abstract class Driver
         }
 
         $this->execute();
+
+        return $this;
     }
 
     /**
@@ -127,7 +131,7 @@ abstract class Driver
      *
      * @throws RuntimeException
      */
-    public function rollback(?string $to = null): void
+    public function rollback(?string $to = null): self
     {
         if (isset($to)) {
             $this->queries[] = [self::REGULAR, "ROLLBACK TO $to"];
@@ -136,6 +140,8 @@ abstract class Driver
         }
 
         $this->execute();
+
+        return $this;
     }
 
     /**
@@ -143,7 +149,7 @@ abstract class Driver
      *
      * @throws RuntimeException
      */
-    public function queue(array|string $queries): void
+    public function queue(array|string $queries): self
     {
         foreach ((array) $queries as $query) {
             $this->queries[] = [self::REGULAR, $query];
@@ -152,6 +158,8 @@ abstract class Driver
         if (count($this->queries) > 64) {
             $this->execute();
         }
+
+        return $this;
     }
 
     /**
@@ -178,9 +186,11 @@ abstract class Driver
      *
      * @throws RuntimeException
      */
-    public function flush(): void
+    public function flush(): self
     {
         $this->execute();
+
+        return $this;
     }
 
     /**

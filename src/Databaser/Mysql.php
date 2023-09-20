@@ -17,7 +17,7 @@ class Mysql extends Driver
      *
      * @throws RuntimeException
      */
-    protected function connect(): void
+    protected function connect(): self
     {
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
@@ -49,6 +49,8 @@ class Mysql extends Driver
                 ->setSqlState($error->getSqlState())
                 ->addSqlStateToMessage();
         }
+
+        return $this;
     }
 
     /**

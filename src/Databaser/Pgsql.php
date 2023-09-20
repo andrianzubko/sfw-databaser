@@ -17,7 +17,7 @@ class Pgsql extends Driver
      *
      * @throws RuntimeException
      */
-    protected function connect(): void
+    protected function connect(): self
     {
         $db = (($this->options['persistent'] ?? false) ? 'pg_pconnect' : 'pg_connect')(
             sprintf(
@@ -46,6 +46,8 @@ class Pgsql extends Driver
         }
 
         $this->db = $db;
+
+        return $this;
     }
 
     /**
