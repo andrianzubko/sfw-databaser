@@ -70,7 +70,8 @@ abstract class Driver
                 if ($this->inTrans) {
                     try {
                         $this->rollback();
-                    } catch (Exception) {}
+                    } catch (Exception) {
+                    }
                 }
             }
         );
