@@ -44,9 +44,9 @@ class Mysql extends Driver
             $this->db->set_charset(
                 $this->options['charset'] ?? 'utf8mb4'
             );
-        } catch (\mysqli_sql_exception $error) {
-            throw (new RuntimeException($error->getMessage()))
-                ->setSqlState($error->getSqlState())
+        } catch (\mysqli_sql_exception $e) {
+            throw (new RuntimeException($e->getMessage()))
+                ->setSqlState($e->getSqlState())
                 ->addSqlStateToMessage();
         }
 
@@ -108,9 +108,9 @@ class Mysql extends Driver
             } while (
                 $this->db->next_result()
             );
-        } catch (\mysqli_sql_exception $error) {
-            throw (new RuntimeException($error->getMessage()))
-                ->setSqlState($error->getSqlState())
+        } catch (\mysqli_sql_exception $e) {
+            throw (new RuntimeException($e->getMessage()))
+                ->setSqlState($e->getSqlState())
                 ->addSqlStateToMessage();
         }
 
@@ -122,6 +122,8 @@ class Mysql extends Driver
      */
     protected function escapeString(string $string): string
     {
-        return "'" . $this->db->real_escape_string($string) . "'";
+        $escaped = $this->db->real_escape_string($string);
+
+        return "'$escaped'";
     }
 }
