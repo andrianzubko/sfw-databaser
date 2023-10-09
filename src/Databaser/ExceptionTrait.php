@@ -14,7 +14,7 @@ trait ExceptionTrait
      */
     public function addSqlStateToMessage(): self
     {
-        $this->message = sprintf('[%s] %s', $this->sqlState, $this->message);
+        $this->message = "[$this->sqlState] $this->message";
 
         return $this;
     }

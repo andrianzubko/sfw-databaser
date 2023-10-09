@@ -5,7 +5,7 @@ namespace SFW;
 /**
  * Databaser.
  */
-class Databaser
+final class Databaser
 {
     /**
      * Columns are returned as numeric arrays.

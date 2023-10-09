@@ -65,16 +65,18 @@ abstract class Driver
             $this->mode = $this->options['mode'];
         }
 
-        register_shutdown_function(
-            function () {
-                if ($this->inTrans) {
-                    try {
-                        $this->rollback();
-                    } catch (Exception) {
+        if ($this->options['cleanup'] ?? true) {
+            register_shutdown_function(
+                function () {
+                    if ($this->inTrans) {
+                        try {
+                            $this->rollback();
+                        } catch (Exception) {
+                        }
                     }
                 }
-            }
-        );
+            );
+        }
     }
 
     /**
