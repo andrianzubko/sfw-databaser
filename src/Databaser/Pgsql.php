@@ -15,7 +15,7 @@ class Pgsql extends Driver
     /**
      * Connecting to database on demand.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     protected function connect(): self
     {
@@ -32,7 +32,7 @@ class Pgsql extends Driver
         );
 
         if ($db === false) {
-            throw (new RuntimeException('Error in the process of establishing a connection'))
+            throw (new Exception\Runtime('Error in the process of establishing a connection'))
                 ->addSqlStateToMessage();
         }
 
@@ -41,7 +41,7 @@ class Pgsql extends Driver
         $charset = $this->options['charset'] ?? 'utf-8';
 
         if (pg_set_client_encoding($db, $charset) === -1) {
-            throw (new RuntimeException("Unable to set charset $charset"))
+            throw (new Exception\Runtime("Unable to set charset $charset"))
                 ->addSqlStateToMessage();
         }
 
@@ -79,7 +79,7 @@ class Pgsql extends Driver
     /**
      * Executing bundle queries at once.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     protected function executeQueries(string $queries): object|false
     {
@@ -89,14 +89,12 @@ class Pgsql extends Driver
             return $result;
         }
 
-        if (preg_match('/^ERROR:\s*([\dA-Z]{5}):\s*(.+)/u',
-                pg_last_error($this->db), $M)
-        ) {
-            throw (new RuntimeException($M[2]))
+        if (preg_match('/^ERROR:\s*([\dA-Z]{5}):\s*(.+)/u', pg_last_error($this->db), $M)) {
+            throw (new Exception\Runtime($M[2]))
                 ->setSqlState($M[1])
                 ->addSqlStateToMessage();
         } else {
-            throw (new RuntimeException($M[0]))
+            throw (new Exception\Runtime($M[0]))
                 ->addSqlStateToMessage();
         }
     }

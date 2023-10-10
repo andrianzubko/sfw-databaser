@@ -82,7 +82,7 @@ abstract class Driver
     /**
      * Connecting to database on demand.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     abstract protected function connect(): self;
 
@@ -94,7 +94,7 @@ abstract class Driver
     /**
      * Begin transaction.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function begin(?string $isolation = null): self
     {
@@ -112,7 +112,7 @@ abstract class Driver
     /**
      * Commit transaction. If nothing was after begin, then ignore begin.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function commit(): self
     {
@@ -132,7 +132,7 @@ abstract class Driver
     /**
      * Rollback transaction.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function rollback(?string $to = null): self
     {
@@ -150,7 +150,7 @@ abstract class Driver
     /**
      * Queueing query.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function queue(array|string $queries): self
     {
@@ -173,7 +173,7 @@ abstract class Driver
     /**
      * Executing query and return result.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function query(array|string $queries): Result|false
     {
@@ -187,7 +187,7 @@ abstract class Driver
     /**
      * Executing all queued queries.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function flush(): self
     {
@@ -199,7 +199,7 @@ abstract class Driver
     /**
      * Returns the ID of the last inserted row or sequence value.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function lastInsertId(): int|string|false
     {
@@ -213,14 +213,14 @@ abstract class Driver
     /**
      * Executing bundle queries at once.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     abstract protected function executeQueries(string $queries): object|false;
 
     /**
      * Executing all queued queries and result returning.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     protected function execute(): object|false
     {
@@ -296,7 +296,7 @@ abstract class Driver
     /**
      * Formatting and escaping strings for queries.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function string(mixed $strings, string $null = 'NULL'): string
     {

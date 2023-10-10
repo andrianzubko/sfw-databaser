@@ -1,8 +1,8 @@
 <?php
 
-namespace SFW\Databaser;
+namespace SFW\Databaser\Exception;
 
-trait ExceptionTrait
+trait SqlStateTrait
 {
     /**
      * Code which identifies SQL error condition.

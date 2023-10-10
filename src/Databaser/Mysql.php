@@ -15,7 +15,7 @@ class Mysql extends Driver
     /**
      * Connecting to database on demand.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     protected function connect(): self
     {
@@ -45,7 +45,7 @@ class Mysql extends Driver
                 $this->options['charset'] ?? 'utf8mb4'
             );
         } catch (\mysqli_sql_exception $e) {
-            throw (new RuntimeException($e->getMessage()))
+            throw (new Exception\Runtime($e->getMessage()))
                 ->setSqlState($e->getSqlState())
                 ->addSqlStateToMessage();
         }
@@ -82,7 +82,7 @@ class Mysql extends Driver
     /**
      * Returns the ID of the last inserted row or sequence value.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     public function lastInsertId(): int|string|false
     {
@@ -96,7 +96,7 @@ class Mysql extends Driver
     /**
      * Executing bundle queries at once.
      *
-     * @throws RuntimeException
+     * @throws Exception\Runtime
      */
     protected function executeQueries(string $queries): object|false
     {
@@ -109,7 +109,7 @@ class Mysql extends Driver
                 $this->db->next_result()
             );
         } catch (\mysqli_sql_exception $e) {
-            throw (new RuntimeException($e->getMessage()))
+            throw (new Exception\Runtime($e->getMessage()))
                 ->setSqlState($e->getSqlState())
                 ->addSqlStateToMessage();
         }
