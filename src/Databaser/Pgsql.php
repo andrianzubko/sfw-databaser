@@ -89,12 +89,14 @@ class Pgsql extends Driver
             return $result;
         }
 
-        if (preg_match('/^ERROR:\s*([\dA-Z]{5}):\s*(.+)/u', pg_last_error($this->db), $M)) {
+        $lastError = pg_last_error($this->db);
+
+        if (preg_match('/^ERROR:\s*([\dA-Z]{5}):\s*(.+)/u', $lastError, $M)) {
             throw (new Exception\Runtime($M[2]))
                 ->setSqlState($M[1])
                 ->addSqlStateToMessage();
         } else {
-            throw (new Exception\Runtime($M[0]))
+            throw (new Exception\Runtime($lastError))
                 ->addSqlStateToMessage();
         }
     }
