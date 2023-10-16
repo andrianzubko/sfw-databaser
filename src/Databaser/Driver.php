@@ -152,11 +152,9 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    public function queue(array|string $queries): self
+    public function queue(string $query): self
     {
-        foreach ((array) $queries as $query) {
-            $this->queries[] = [self::REGULAR, $query];
-        }
+        $this->queries[] = [self::REGULAR, $query];
 
         if (count($this->queries) > 64) {
             $this->execute();
@@ -175,11 +173,9 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    public function query(array|string $queries): Result|false
+    public function query(string $query): Result|false
     {
-        foreach ((array) $queries as $query) {
-            $this->queries[] = [self::REGULAR, $query];
-        }
+        $this->queries[] = [self::REGULAR, $query];
 
         return $this->assignResult($this->execute());
     }
@@ -270,13 +266,11 @@ abstract class Driver
     public function number(mixed $numbers, string $null = 'NULL'): string
     {
         if (is_scalar($numbers)) {
-            return (string) (double) $numbers;
-        } elseif (
-            is_array($numbers)
-        ) {
+            return (string) (float) $numbers;
+        } elseif (is_array($numbers)) {
             foreach ($numbers as &$value) {
                 if (isset($value)) {
-                    $value = (double) $value;
+                    $value = (float) $value;
                 } else {
                     $value = $null;
                 }
@@ -306,9 +300,7 @@ abstract class Driver
 
         if (is_scalar($strings)) {
             return $this->escapeString((string) $strings);
-        } elseif (
-            is_array($strings)
-        ) {
+        } elseif (is_array($strings)) {
             foreach ($strings as &$value) {
                 if (isset($value)) {
                     $value = $this->escapeString((string) $value);
