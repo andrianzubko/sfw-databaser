@@ -173,7 +173,7 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    public function query(string $query): Result|false
+    public function query(string $query): Result
     {
         $this->queries[] = [self::REGULAR, $query];
 
