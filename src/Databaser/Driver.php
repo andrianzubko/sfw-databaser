@@ -50,7 +50,7 @@ abstract class Driver
     /**
      * External profiler for queries.
      */
-    protected ?\Closure $profiler = null;
+    protected \Closure $profiler;
 
     /**
      * Timer of executed queries.
@@ -251,7 +251,7 @@ abstract class Driver
         } finally {
             self::$timer += $timer = gettimeofday(true) - $timer;
 
-            if ($this->profiler !== null) {
+            if (isset($this->profiler)) {
                 ($this->profiler)($timer, $queries);
             }
         }
