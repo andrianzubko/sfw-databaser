@@ -44,7 +44,7 @@ class PgsqlResult extends Result
     /**
      * Fetches next result row column.
      */
-    protected function fetchNextRowColumn(int $i): mixed
+    protected function fetchNextRowColumn(int $i): string|null|false
     {
         return pg_fetch_result($this->result, $i);
     }

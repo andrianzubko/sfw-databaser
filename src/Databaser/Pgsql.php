@@ -13,12 +13,16 @@ class Pgsql extends Driver
     protected \PgSql\Connection $db;
 
     /**
-     * Connecting to database on demand.
+     * Connects to database on demand.
      *
      * @throws Exception\Runtime
      */
     protected function connect(): self
     {
+        if ($this->connected) {
+            return $this;
+        }
+
         $db = (($this->options['persistent'] ?? false) ? 'pg_pconnect' : 'pg_connect')(
             sprintf(
                 "host=%s port=%s dbname=%s user=%s password=%s",
@@ -47,6 +51,8 @@ class Pgsql extends Driver
 
         $this->db = $db;
 
+        $this->connected = true;
+
         return $this;
     }
 
@@ -55,7 +61,7 @@ class Pgsql extends Driver
      */
     protected function makeBeginCommand(?string $isolation): string
     {
-        if (isset($isolation)) {
+        if ($isolation !== null) {
             return "START TRANSACTION $isolation";
         }
 
@@ -63,7 +69,7 @@ class Pgsql extends Driver
     }
 
     /**
-     * Assign result to local class.
+     * Assigns result to local class.
      */
     protected function assignResult(object|false $result): Result
     {
@@ -77,11 +83,19 @@ class Pgsql extends Driver
     }
 
     /**
-     * Executing bundle queries at once.
+     * Not implemented!
+     */
+    public function lastInsertId(): false
+    {
+        return false;
+    }
+
+    /**
+     * Executes bundle queries at once.
      *
      * @throws Exception\Runtime
      */
-    protected function executeQueries(string $queries): object|false
+    protected function executeQueries(string $queries): \PgSql\Result
     {
         $result = @pg_query($this->db, $queries);
 
@@ -102,7 +116,7 @@ class Pgsql extends Driver
     }
 
     /**
-     * Escaping string.
+     * Escapes special characters in a string.
      */
     protected function escapeString(string $string): string
     {

@@ -10,10 +10,8 @@ class MysqlResult extends Result
     /**
      * Gets column names and looking for json types.
      */
-    public function __construct(
-        protected \mysqli_result $result,
-        protected int|string $affectedRows
-    ) {
+    public function __construct(protected \mysqli_result $result, protected int|string $affectedRows)
+    {
         if ($this->result->field_count) {
             foreach ($result->fetch_fields() as $i => $field) {
                 $this->colNames[$i] = $field->name;

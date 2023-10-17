@@ -2,6 +2,8 @@
 
 namespace SFW\Databaser;
 
+use SFW\Databaser;
+
 /**
  * Database result handling.
  */
@@ -35,20 +37,20 @@ class Result implements \IteratorAggregate
      */
     public function fetchAll(?int $mode = null): array
     {
-        $mode ??= $this->mode ?? \SFW\Databaser::ASSOC;
+        $mode ??= $this->mode ?? Databaser::ASSOC;
 
         $rows = $this->fetchAllRows();
 
         foreach ($rows as &$row) {
             foreach ($this->jsonCols as $i => $true) {
-                if (isset($row[$i])) {
+                if ($row[$i] !== null) {
                     $row[$i] = json_decode($row[$i], true);
                 }
             }
 
-            if ($mode === \SFW\Databaser::ASSOC) {
+            if ($mode === Databaser::ASSOC) {
                 $row = array_combine($this->colNames, $row);
-            } elseif ($mode === \SFW\Databaser::OBJECT) {
+            } elseif ($mode === Databaser::OBJECT) {
                 $row = (object) array_combine($this->colNames, $row);
             }
         }
@@ -76,7 +78,7 @@ class Result implements \IteratorAggregate
         }
 
         foreach ($this->jsonCols as $i => $true) {
-            if (isset($row[$i])) {
+            if ($row[$i] !== null) {
                 $row[$i] = json_decode($row[$i], true);
             }
         }
@@ -96,7 +98,7 @@ class Result implements \IteratorAggregate
         }
 
         foreach ($this->jsonCols as $i => $true) {
-            if (isset($row[$i])) {
+            if ($row[$i] !== null) {
                 $row[$i] = json_decode($row[$i], true);
             }
         }
@@ -116,7 +118,7 @@ class Result implements \IteratorAggregate
         }
 
         foreach ($this->jsonCols as $i => $true) {
-            if (isset($row[$i])) {
+            if ($row[$i] !== null) {
                 $row[$i] = json_decode($row[$i], true);
             }
         }
@@ -167,7 +169,7 @@ class Result implements \IteratorAggregate
 
         if (isset($this->jsonCols[$i])) {
             foreach ($columns as &$column) {
-                if (isset($column)) {
+                if ($column !== null) {
                     $column = json_decode($column, true);
                 }
             }

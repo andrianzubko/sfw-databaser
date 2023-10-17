@@ -28,9 +28,14 @@ abstract class Driver
     protected const ROLLBACK = 3;
 
     /**
-     * External profiler for queries.
+     * Connected flag.
      */
-    protected ?\Closure $profiler = null;
+    protected bool $connected = false;
+
+    /**
+     * In transaction flag.
+     */
+    protected bool $inTrans = false;
 
     /**
      * Default mode for fetchAll method of Result class.
@@ -43,9 +48,9 @@ abstract class Driver
     protected array $queries = [];
 
     /**
-     * In transaction flag.
+     * External profiler for queries.
      */
-    protected bool $inTrans = false;
+    protected ?\Closure $profiler = null;
 
     /**
      * Timer of executed queries.
@@ -58,9 +63,10 @@ abstract class Driver
     protected static int $counter = 0;
 
     /**
-     * Clearing at shutdown if still in transaction.
+     * Cleanups at shutdown if still in transaction.
      */
-    public function __construct(protected array $options = []) {
+    public function __construct(protected array $options = [])
+    {
         if (isset($this->options['mode'])) {
             $this->mode = $this->options['mode'];
         }
@@ -80,7 +86,7 @@ abstract class Driver
     }
 
     /**
-     * Connecting to database on demand.
+     * Connects to database on demand.
      *
      * @throws Exception\Runtime
      */
@@ -92,7 +98,7 @@ abstract class Driver
     abstract protected function makeBeginCommand(?string $isolation): string;
 
     /**
-     * Begin transaction.
+     * Begins transaction.
      *
      * @throws Exception\Runtime
      */
@@ -110,7 +116,7 @@ abstract class Driver
     }
 
     /**
-     * Commit transaction. If nothing was after begin, then ignore begin.
+     * Commits transaction. If nothing was after begin, then ignores begin.
      *
      * @throws Exception\Runtime
      */
@@ -130,13 +136,13 @@ abstract class Driver
     }
 
     /**
-     * Rollback transaction.
+     * Rollbacks transaction.
      *
      * @throws Exception\Runtime
      */
     public function rollback(?string $to = null): self
     {
-        if (isset($to)) {
+        if ($to !== null) {
             $this->queries[] = [self::REGULAR, "ROLLBACK TO $to"];
         } else {
             $this->queries[] = [self::ROLLBACK, "ROLLBACK"];
@@ -148,7 +154,7 @@ abstract class Driver
     }
 
     /**
-     * Queueing query.
+     * Queues query.
      *
      * @throws Exception\Runtime
      */
@@ -164,12 +170,12 @@ abstract class Driver
     }
 
     /**
-     * Assign result to local class.
+     * Assigns result to local class.
      */
     abstract protected function assignResult(object|false $result): Result;
 
     /**
-     * Executing query and return result.
+     * Executes query and returns result.
      *
      * @throws Exception\Runtime
      */
@@ -181,7 +187,7 @@ abstract class Driver
     }
 
     /**
-     * Executing all queued queries.
+     * Executes all queued queries.
      *
      * @throws Exception\Runtime
      */
@@ -197,24 +203,17 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    public function lastInsertId(): int|string|false
-    {
-        if (!isset($this->db)) {
-            $this->connect();
-        }
-
-        return false;
-    }
+    abstract public function lastInsertId(): int|string|false;
 
     /**
-     * Executing bundle queries at once.
+     * Executes bundle queries at once.
      *
      * @throws Exception\Runtime
      */
     abstract protected function executeQueries(string $queries): object|false;
 
     /**
-     * Executing all queued queries and result returning.
+     * Executes all queued queries and returns result.
      *
      * @throws Exception\Runtime
      */
@@ -224,7 +223,7 @@ abstract class Driver
             return false;
         }
 
-        if (!isset($this->db)) {
+        if (!$this->connected) {
             $this->connect();
         }
 
@@ -252,7 +251,7 @@ abstract class Driver
         } finally {
             self::$timer += $timer = gettimeofday(true) - $timer;
 
-            if (isset($this->profiler)) {
+            if ($this->profiler !== null) {
                 ($this->profiler)($timer, $queries);
             }
         }
@@ -261,18 +260,18 @@ abstract class Driver
     }
 
     /**
-     * Formatting numbers for queries.
+     * Formats numbers for queries.
      */
     public function number(mixed $numbers, string $null = 'NULL'): string
     {
         if (is_scalar($numbers)) {
             return (string) (float) $numbers;
         } elseif (is_array($numbers)) {
-            foreach ($numbers as &$value) {
-                if (isset($value)) {
-                    $value = (float) $value;
+            foreach ($numbers as &$number) {
+                if ($number === null) {
+                    $number = $null;
                 } else {
-                    $value = $null;
+                    $number = (float) $number;
                 }
             }
 
@@ -283,29 +282,29 @@ abstract class Driver
     }
 
     /**
-     * Escaping string.
+     * Escapes special characters in a string.
      */
     abstract protected function escapeString(string $string): string;
 
     /**
-     * Formatting and escaping strings for queries.
+     * Formats and escapes strings for queries.
      *
      * @throws Exception\Runtime
      */
     public function string(mixed $strings, string $null = 'NULL'): string
     {
-        if (!isset($this->db)) {
+        if (!$this->connected) {
             $this->connect();
         }
 
         if (is_scalar($strings)) {
             return $this->escapeString((string) $strings);
         } elseif (is_array($strings)) {
-            foreach ($strings as &$value) {
-                if (isset($value)) {
-                    $value = $this->escapeString((string) $value);
+            foreach ($strings as &$string) {
+                if ($string === null) {
+                    $string = $null;
                 } else {
-                    $value = $null;
+                    $string = $this->escapeString((string) $string);
                 }
             }
 
@@ -316,7 +315,7 @@ abstract class Driver
     }
 
     /**
-     * Join expressions for where part of queries.
+     * Joins expressions for WHERE.
      */
     public function every(array $expressions): string
     {
@@ -328,7 +327,7 @@ abstract class Driver
     }
 
     /**
-     * Join expressions for where part of queries.
+     * Joins expressions for WHERE.
      */
     public function any(array $expressions): string
     {
@@ -340,7 +339,7 @@ abstract class Driver
     }
 
     /**
-     * Join expressions for select or order part of queries.
+     * Joins expressions for SELECT or ORDER.
      */
     public function commas(array $expressions): string
     {
@@ -352,7 +351,7 @@ abstract class Driver
     }
 
     /**
-     * Join expressions with pluses.
+     * Joins expressions with pluses.
      */
     public function pluses(array $expressions): string
     {
@@ -360,7 +359,7 @@ abstract class Driver
     }
 
     /**
-     * Join expressions with spaces.
+     * Joins expressions with spaces.
      */
     public function spaces(array $expressions): string
     {

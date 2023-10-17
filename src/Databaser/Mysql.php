@@ -13,27 +13,35 @@ class Mysql extends Driver
     protected \mysqli $db;
 
     /**
-     * Connecting to database on demand.
+     * Connects to database on demand.
      *
      * @throws Exception\Runtime
      */
     protected function connect(): self
     {
+        if ($this->connected) {
+            return $this;
+        }
+
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-        if (str_starts_with($this->options['host'] ?? '', '/')) {
+        if (!isset($this->options['host'])) {
+            $this->options['host'] = 'localhost';
+        } elseif (
+            str_starts_with($this->options['host'], '/')
+        ) {
             $this->options['socket'] = $this->options['host'];
 
-            $this->options['host'] = null;
+            $this->options['host'] = 'localhost';
         }
 
         if ($this->options['persistent'] ?? false) {
-            $this->options['host'] = 'p:' . ($this->options['host'] ?? 'localhost');
+            $this->options['host'] = 'p:' . $this->options['host'];
         }
 
         try {
             $this->db = new \mysqli(
-                $this->options['host'] ?? 'localhost',
+                $this->options['host'],
                 $this->options['user'] ?? null,
                 $this->options['pass'] ?? null,
                 $this->options['db'] ?? null,
@@ -41,14 +49,14 @@ class Mysql extends Driver
                 $this->options['socket'] ?? null,
             );
 
-            $this->db->set_charset(
-                $this->options['charset'] ?? 'utf8mb4'
-            );
+            $this->db->set_charset($this->options['charset'] ?? 'utf8mb4');
         } catch (\mysqli_sql_exception $e) {
             throw (new Exception\Runtime($e->getMessage()))
                 ->setSqlState($e->getSqlState())
                 ->addSqlStateToMessage();
         }
+
+        $this->connected = true;
 
         return $this;
     }
@@ -58,7 +66,7 @@ class Mysql extends Driver
      */
     protected function makeBeginCommand(?string $isolation): string
     {
-        if (isset($isolation)) {
+        if ($isolation !== null) {
             return "SET TRANSACTION $isolation; START TRANSACTION";
         }
 
@@ -66,7 +74,7 @@ class Mysql extends Driver
     }
 
     /**
-     * Assign result to local class.
+     * Assigns result to local class.
      */
     protected function assignResult(object|false $result): Result
     {
@@ -86,7 +94,7 @@ class Mysql extends Driver
      */
     public function lastInsertId(): int|string|false
     {
-        if (!isset($this->db)) {
+        if (!$this->connected) {
             $this->connect();
         }
 
@@ -94,11 +102,11 @@ class Mysql extends Driver
     }
 
     /**
-     * Executing bundle queries at once.
+     * Executes bundle queries at once.
      *
      * @throws Exception\Runtime
      */
-    protected function executeQueries(string $queries): object|false
+    protected function executeQueries(string $queries): \mysqli_result|false
     {
         try {
             $this->db->multi_query($queries);
@@ -118,12 +126,10 @@ class Mysql extends Driver
     }
 
     /**
-     * Escaping string.
+     * Escapes special characters in a string.
      */
     protected function escapeString(string $string): string
     {
-        $escaped = $this->db->real_escape_string($string);
-
-        return "'$escaped'";
+        return "'" . $this->db->real_escape_string($string) . "'";
     }
 }
