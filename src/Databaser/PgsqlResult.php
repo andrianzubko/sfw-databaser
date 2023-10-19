@@ -14,13 +14,24 @@ class PgsqlResult extends Result
     {
         $numFields = pg_num_fields($this->result);
 
-        if ($numFields) {
-            for ($i = 0; $i < $numFields; $i++) {
-                $this->colNames[$i] = pg_field_name($this->result, $i);
+        for ($i = 0; $i < $numFields; $i++) {
+            $this->colNames[$i] = pg_field_name($this->result, $i);
 
-                if (pg_field_type($this->result, $i) === 'json') {
-                    $this->jsonCols[$i] = true;
-                }
+            switch (pg_field_type($this->result, $i)) {
+                case 'int2':
+                case 'int4':
+                case 'int8':
+                    $this->colTypes[$i] = self::INT;
+                    break;
+                case 'float4':
+                case 'float8':
+                    $this->colTypes[$i] = self::FLOAT;
+                    break;
+                case 'bool':
+                    $this->colTypes[$i] = self::BOOL;
+                    break;
+                case 'json':
+                    $this->colTypes[$i] = self::JSON;
             }
         }
     }

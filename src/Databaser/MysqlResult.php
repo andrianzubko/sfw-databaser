@@ -16,8 +16,23 @@ class MysqlResult extends Result
             foreach ($result->fetch_fields() as $i => $field) {
                 $this->colNames[$i] = $field->name;
 
-                if ($field->type === MYSQLI_TYPE_JSON) {
-                    $this->jsonCols[$i] = true;
+                switch ($field->type) {
+                    case MYSQLI_TYPE_BIT:
+                    case MYSQLI_TYPE_TINY:
+                    case MYSQLI_TYPE_SHORT:
+                    case MYSQLI_TYPE_LONG:
+                    case MYSQLI_TYPE_LONGLONG:
+                    case MYSQLI_TYPE_INT24:
+                    case MYSQLI_TYPE_YEAR:
+                    case MYSQLI_TYPE_ENUM:
+                        $this->colTypes[$i] = self::INT;
+                        break;
+                    case MYSQLI_TYPE_FLOAT:
+                    case MYSQLI_TYPE_DOUBLE:
+                        $this->colTypes[$i] = self::FLOAT;
+                        break;
+                    case MYSQLI_TYPE_JSON:
+                        $this->colTypes[$i] = self::JSON;
                 }
             }
         }

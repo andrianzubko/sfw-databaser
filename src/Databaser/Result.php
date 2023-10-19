@@ -2,13 +2,31 @@
 
 namespace SFW\Databaser;
 
-use SFW\Databaser;
-
 /**
  * Database result handling.
  */
 class Result implements \IteratorAggregate
 {
+    /**
+     * Integer type for types conversion.
+     */
+    protected const INT = 1;
+
+    /**
+     * Float type for types conversion.
+     */
+    protected const FLOAT = 2;
+
+    /**
+     * Boolean type for types conversion.
+     */
+    protected const BOOL = 3;
+
+    /**
+     * Json type for types conversion.
+     */
+    protected const JSON = 4;
+
     /**
      * Default mode for fetchAll method.
      */
@@ -20,9 +38,9 @@ class Result implements \IteratorAggregate
     protected array $colNames = [];
 
     /**
-     * Json columns in result rows.
+     * Types of columns in result rows.
      */
-    protected array $jsonCols = [];
+    protected array $colTypes = [];
 
     /**
      * Fetches all result rows as numeric array.
@@ -37,22 +55,20 @@ class Result implements \IteratorAggregate
      */
     public function fetchAll(?int $mode = null): array
     {
-        $mode ??= $this->mode ?? Databaser::ASSOC;
+        $mode ??= $this->mode ?? \SFW\Databaser::ASSOC;
 
-        $rows = $this->fetchAllRows();
+        $rows = [];
 
-        foreach ($rows as &$row) {
-            foreach ($this->jsonCols as $i => $true) {
-                if ($row[$i] !== null) {
-                    $row[$i] = json_decode($row[$i], true);
-                }
-            }
-
-            if ($mode === Databaser::ASSOC) {
-                $row = array_combine($this->colNames, $row);
-            } elseif ($mode === Databaser::OBJECT) {
-                $row = (object) array_combine($this->colNames, $row);
-            }
+        foreach ($this->fetchAllRows() as $row) {
+            $rows[] = match ($mode) {
+                \SFW\Databaser::ASSOC => array_combine($this->colNames,
+                    $this->convertRow($row)
+                ),
+                \SFW\Databaser::OBJECT => (object) array_combine($this->colNames,
+                    $this->convertRow($row)
+                ),
+                default => $this->convertRow($row)
+            };
         }
 
         return $rows;
@@ -77,13 +93,7 @@ class Result implements \IteratorAggregate
             return false;
         }
 
-        foreach ($this->jsonCols as $i => $true) {
-            if ($row[$i] !== null) {
-                $row[$i] = json_decode($row[$i], true);
-            }
-        }
-
-        return $row;
+        return $this->convertRow($row);
     }
 
     /**
@@ -97,13 +107,7 @@ class Result implements \IteratorAggregate
             return false;
         }
 
-        foreach ($this->jsonCols as $i => $true) {
-            if ($row[$i] !== null) {
-                $row[$i] = json_decode($row[$i], true);
-            }
-        }
-
-        return array_combine($this->colNames, $row);
+        return array_combine($this->colNames, $this->convertRow($row));
     }
 
     /**
@@ -117,13 +121,7 @@ class Result implements \IteratorAggregate
             return false;
         }
 
-        foreach ($this->jsonCols as $i => $true) {
-            if ($row[$i] !== null) {
-                $row[$i] = json_decode($row[$i], true);
-            }
-        }
-
-        return (object) array_combine($this->colNames, $row);
+        return (object) array_combine($this->colNames, $this->convertRow($row));
     }
 
     /**
@@ -145,8 +143,8 @@ class Result implements \IteratorAggregate
             return false;
         }
 
-        if (isset($column, $this->jsonCols[$i])) {
-            return json_decode($column, true);
+        if (isset($column, $this->colTypes[$i])) {
+            return $this->convertColumn($column, $this->colTypes[$i]);
         }
 
         return $column;
@@ -167,10 +165,10 @@ class Result implements \IteratorAggregate
     {
         $columns = $this->fetchAllRowsColumns($i);
 
-        if (isset($this->jsonCols[$i])) {
-            foreach ($columns as &$column) {
+        if (isset($this->colTypes[$i])) {
+            foreach ($columns as $i => $column) {
                 if ($column !== null) {
-                    $column = json_decode($column, true);
+                    $columns[$i] = $this->convertColumn($column, $this->colTypes[$i]);
                 }
             }
         }
@@ -226,5 +224,39 @@ class Result implements \IteratorAggregate
         $this->mode = $mode;
 
         return $this;
+    }
+
+    /**
+     * Converts row values to native PHP types.
+     */
+    private function convertRow(array $row): array
+    {
+        foreach ($this->colTypes as $i => $type) {
+            if ($row[$i] !== null) {
+                $row[$i] = match ($type) {
+                    self::INT => (int) $row[$i],
+                    self::FLOAT => (float) $row[$i],
+                    self::BOOL => ($row[$i] === 't'),
+                    self::JSON => json_decode($row[$i], true),
+                    default => $row[$i]
+                };
+            }
+        }
+
+        return $row;
+    }
+
+    /**
+     * Converts column value to native PHP types.
+     */
+    private function convertColumn(mixed $column, int $type): mixed
+    {
+        return match ($type) {
+            self::INT => (int) $column,
+            self::FLOAT => (float) $column,
+            self::BOOL => ($column === 't'),
+            self::JSON => json_decode($column, true),
+            default => $column
+        };
     }
 }
