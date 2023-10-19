@@ -238,14 +238,14 @@ abstract class Driver
 
         $this->queries = [];
 
-        self::$counter += 1;
-
         $timer = gettimeofday(true);
 
         try {
-            $result = $this->executeQueries(implode(';', $queries));
+            $result = $this->executeQueries(implode('; ', $queries));
         } finally {
             self::$timer += $timer = gettimeofday(true) - $timer;
+
+            self::$counter += 1;
 
             if (isset($this->profiler)) {
                 ($this->profiler)($timer, $queries);
