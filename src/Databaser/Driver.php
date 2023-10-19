@@ -122,9 +122,7 @@ abstract class Driver
      */
     public function commit(): self
     {
-        if ($this->queries
-            && end($this->queries)[0] === self::BEGIN
-        ) {
+        if ($this->queries && end($this->queries)[0] === self::BEGIN) {
             array_pop($this->queries);
         } else {
             $this->queries[] = [self::COMMIT, "COMMIT"];
@@ -228,14 +226,12 @@ abstract class Driver
         }
 
         foreach ($this->queries as $query) {
-            if ($query[0] === self::BEGIN) {
-                $this->inTrans = true;
-            } elseif (
-                   $query[0] === self::COMMIT
-                || $query[0] === self::ROLLBACK
-            ) {
-                $this->inTrans = false;
-            }
+            $this->inTrans = match ($query[0]) {
+                self::BEGIN => true,
+                self::COMMIT,
+                self::ROLLBACK => false,
+                default => $this->inTrans
+            };
         }
 
         $queries = array_column($this->queries, 1);
@@ -264,21 +260,19 @@ abstract class Driver
      */
     public function number(mixed $numbers, string $null = 'NULL'): string
     {
-        if (is_scalar($numbers)) {
-            return (string) (float) $numbers;
-        } elseif (is_array($numbers)) {
+        if (is_array($numbers)) {
             foreach ($numbers as &$number) {
                 if ($number === null) {
                     $number = $null;
                 } else {
-                    $number = (float) $number;
+                    $number = (string) (float) $number;
                 }
             }
 
-            return implode(',', $numbers);
+            return $this->commas($numbers, '');
         }
 
-        return $null;
+        return (string) (float) $numbers;
     }
 
     /**
@@ -297,9 +291,7 @@ abstract class Driver
             $this->connect();
         }
 
-        if (is_scalar($strings)) {
-            return $this->escapeString((string) $strings);
-        } elseif (is_array($strings)) {
+        if (is_array($strings)) {
             foreach ($strings as &$string) {
                 if ($string === null) {
                     $string = $null;
@@ -308,19 +300,49 @@ abstract class Driver
                 }
             }
 
-            return implode(',', $strings);
+            return $this->commas($strings, '');
         }
 
-        return $null;
+        return $this->escapeString((string) $strings);
+    }
+
+    /**
+     * Formats and escapes strings for queries, but leave numeric types as-is.
+     *
+     * @throws Exception\Runtime
+     */
+    public function scalar(mixed $strings, string $null = 'NULL'): string
+    {
+        if (!$this->connected) {
+            $this->connect();
+        }
+
+        if (is_array($strings)) {
+            foreach ($strings as &$string) {
+                if ($string === null) {
+                    $string = $null;
+                } elseif (is_numeric($string)) {
+                    $string = (string) $string;
+                } else {
+                    $string = $this->escapeString((string) $string);
+                }
+            }
+
+            return $this->commas($strings, '');
+        } elseif (is_numeric($strings)) {
+            return (string) $strings;
+        }
+
+        return $this->escapeString((string) $strings);
     }
 
     /**
      * Joins expressions for WHERE.
      */
-    public function every(array $expressions): string
+    public function every(array $expressions, string $default = 'true'): string
     {
         if (!$expressions) {
-            return 'true';
+            return $default;
         }
 
         return implode(' AND ', $expressions);
@@ -329,10 +351,10 @@ abstract class Driver
     /**
      * Joins expressions for WHERE.
      */
-    public function any(array $expressions): string
+    public function any(array $expressions, string $default = 'true'): string
     {
         if (!$expressions) {
-            return 'true';
+            return $default;
         }
 
         return implode(' OR ', $expressions);
@@ -341,28 +363,36 @@ abstract class Driver
     /**
      * Joins expressions for SELECT or ORDER.
      */
-    public function commas(array $expressions): string
+    public function commas(array $expressions, string $default = 'true'): string
     {
         if (!$expressions) {
-            return 'true';
+            return $default;
         }
 
-        return implode(',', $expressions);
+        return implode(', ', $expressions);
     }
 
     /**
      * Joins expressions with pluses.
      */
-    public function pluses(array $expressions): string
+    public function pluses(array $expressions, string $default = ''): string
     {
-        return implode('+', $expressions);
+        if (!$expressions) {
+            return $default;
+        }
+
+        return implode(' + ', $expressions);
     }
 
     /**
      * Joins expressions with spaces.
      */
-    public function spaces(array $expressions): string
+    public function spaces(array $expressions, string $default = ''): string
     {
+        if (!$expressions) {
+            return $default;
+        }
+
         return implode(' ', $expressions);
     }
 
