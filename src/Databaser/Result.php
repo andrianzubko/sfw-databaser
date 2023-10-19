@@ -166,9 +166,9 @@ class Result implements \IteratorAggregate
         $columns = $this->fetchAllRowsColumns($i);
 
         if (isset($this->colTypes[$i])) {
-            foreach ($columns as $i => $column) {
+            foreach ($columns as $j => $column) {
                 if ($column !== null) {
-                    $columns[$i] = $this->convertColumn($column, $this->colTypes[$i]);
+                    $columns[$j] = $this->convertColumn($column, $this->colTypes[$i]);
                 }
             }
         }
