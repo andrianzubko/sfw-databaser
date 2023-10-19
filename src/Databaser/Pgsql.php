@@ -17,10 +17,10 @@ class Pgsql extends Driver
      *
      * @throws Exception\Runtime
      */
-    protected function connect(): self
+    protected function connect(): void
     {
-        if ($this->connected) {
-            return $this;
+        if (isset($this->db)) {
+            return;
         }
 
         $db = (($this->options['persistent'] ?? false) ? 'pg_pconnect' : 'pg_connect')(
@@ -50,10 +50,6 @@ class Pgsql extends Driver
         }
 
         $this->db = $db;
-
-        $this->connected = true;
-
-        return $this;
     }
 
     /**
@@ -97,6 +93,10 @@ class Pgsql extends Driver
      */
     protected function executeQueries(string $queries): \PgSql\Result
     {
+        if (!isset($this->db)) {
+            $this->connect();
+        }
+
         $result = @pg_query($this->db, $queries);
 
         if ($result !== false) {
@@ -120,6 +120,10 @@ class Pgsql extends Driver
      */
     protected function escapeString(string $string): string
     {
+        if (!isset($this->db)) {
+            $this->connect();
+        }
+
         return pg_escape_literal($this->db, $string);
     }
 }

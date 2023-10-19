@@ -28,11 +28,6 @@ abstract class Driver
     protected const ROLLBACK = 3;
 
     /**
-     * Connected flag.
-     */
-    protected bool $connected = false;
-
-    /**
      * In transaction flag.
      */
     protected bool $inTrans = false;
@@ -90,7 +85,7 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    abstract protected function connect(): self;
+    abstract protected function connect(): void;
 
     /**
      * Begin command is different at different databases.
@@ -221,10 +216,6 @@ abstract class Driver
             return false;
         }
 
-        if (!$this->connected) {
-            $this->connect();
-        }
-
         foreach ($this->queries as $query) {
             $this->inTrans = match ($query[0]) {
                 self::BEGIN => true,
@@ -263,49 +254,39 @@ abstract class Driver
     /**
      * Formats numbers for queries.
      */
-    public function number(mixed $numbers, string $null = 'NULL'): string
+    public function number(mixed $number, string $null = 'NULL'): string
     {
-        if ($numbers === null) {
-            return $null;
-        }
-
-        if (is_array($numbers)) {
-            foreach ($numbers as &$number) {
-                if ($number === null) {
-                    $number = $null;
-                } else {
-                    $number = (string) (float) $number;
+        switch (true) {
+            case $number === null:
+                return $null;
+            case is_array($number):
+                foreach ($number as $i => $value) {
+                    $number[$i] = $this->number($value, $null);
                 }
-            }
 
-            return $this->commas($numbers, '');
+                return $this->commas($number, '');
+            default:
+                return (string) (float) $number;
         }
-
-        return (string) (float) $numbers;
     }
 
     /**
      * Formats booleans for queries.
      */
-    public function bool(mixed $booleans, string $null = 'NULL'): string
+    public function bool(mixed $bool, string $null = 'NULL'): string
     {
-        if ($booleans === null) {
-            return $null;
-        }
-
-        if (is_array($booleans)) {
-            foreach ($booleans as &$boolean) {
-                if ($boolean === null) {
-                    $boolean = $null;
-                } else {
-                    $boolean = $boolean ? 'true' : 'false';
+        switch (true) {
+            case $bool === null:
+                return $null;
+            case is_array($bool):
+                foreach ($bool as $i => $value) {
+                    $bool[$i] = $this->bool($value, $null);
                 }
-            }
 
-            return $this->commas($booleans, '');
+                return $this->commas($bool, '');
+            default:
+                return $bool ? 'true' : 'false';
         }
-
-        return $booleans ? 'true' : 'false';
     }
 
     /**
@@ -313,29 +294,20 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    public function string(mixed $strings, string $null = 'NULL'): string
+    public function string(mixed $string, string $null = 'NULL'): string
     {
-        if ($strings === null) {
-            return $null;
-        }
-
-        if (!$this->connected) {
-            $this->connect();
-        }
-
-        if (is_array($strings)) {
-            foreach ($strings as &$string) {
-                if ($string === null) {
-                    $string = $null;
-                } else {
-                    $string = $this->escapeString((string) $string);
+        switch (true) {
+            case $string === null:
+                return $null;
+            case is_array($string):
+                foreach ($string as $i => $value) {
+                    $string[$i] = $this->string($value, $null);
                 }
-            }
 
-            return $this->commas($strings, '');
+                return $this->commas($string, '');
+            default:
+                return $this->escapeString((string) $string);
         }
-
-        return $this->escapeString((string) $strings);
     }
 
     /**
@@ -343,37 +315,24 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    public function scalar(mixed $scalars, string $null = 'NULL'): string
+    public function scalar(mixed $scalar, string $null = 'NULL'): string
     {
-        if ($scalars === null) {
-            return $null;
-        }
-
-        if (!$this->connected) {
-            $this->connect();
-        }
-
-        if (is_array($scalars)) {
-            foreach ($scalars as &$scalar) {
-                if ($scalar === null) {
-                    $scalar = $null;
-                } elseif (is_numeric($scalar)) {
-                    $scalar = (string) $scalar;
-                } elseif (is_bool($scalar)) {
-                    $scalar = $scalar ? 'true' : 'false';
-                } else {
-                    $scalar = $this->escapeString((string) $scalar);
+        switch (true) {
+            case $scalar === null:
+                return $null;
+            case is_array($scalar):
+                foreach ($scalar as $i => $value) {
+                    $scalar[$i] = $this->scalar($value, $null);
                 }
-            }
 
-            return $this->commas($scalars, '');
-        } elseif (is_numeric($scalars)) {
-            return (string) $scalars;
-        } elseif (is_bool($scalars)) {
-            return $scalars ? 'true' : 'false';
+                return $this->commas($scalar, '');
+            case is_numeric($scalar):
+                return (string) $scalar;
+            case is_bool($scalar):
+                return $scalar ? 'true' : 'false';
+            default:
+                return $this->escapeString((string) $scalar);
         }
-
-        return $this->escapeString((string) $scalars);
     }
 
     /**

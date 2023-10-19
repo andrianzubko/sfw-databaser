@@ -17,10 +17,10 @@ class Mysql extends Driver
      *
      * @throws Exception\Runtime
      */
-    protected function connect(): self
+    protected function connect(): void
     {
-        if ($this->connected) {
-            return $this;
+        if (isset($this->db)) {
+            return;
         }
 
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -55,10 +55,6 @@ class Mysql extends Driver
                 ->setSqlState($e->getSqlState())
                 ->addSqlStateToMessage();
         }
-
-        $this->connected = true;
-
-        return $this;
     }
 
     /**
@@ -94,7 +90,7 @@ class Mysql extends Driver
      */
     public function lastInsertId(): int|string|false
     {
-        if (!$this->connected) {
+        if (!isset($this->db)) {
             $this->connect();
         }
 
@@ -108,6 +104,10 @@ class Mysql extends Driver
      */
     protected function executeQueries(string $queries): \mysqli_result|false
     {
+        if (!isset($this->db)) {
+            $this->connect();
+        }
+
         try {
             $this->db->multi_query($queries);
 
@@ -130,6 +130,10 @@ class Mysql extends Driver
      */
     protected function escapeString(string $string): string
     {
+        if (!isset($this->db)) {
+            $this->connect();
+        }
+
         return "'" . $this->db->real_escape_string($string) . "'";
     }
 }
