@@ -260,6 +260,10 @@ abstract class Driver
      */
     public function number(mixed $numbers, string $null = 'NULL'): string
     {
+        if ($numbers === null) {
+            return $null;
+        }
+
         if (is_array($numbers)) {
             foreach ($numbers as &$number) {
                 if ($number === null) {
@@ -287,6 +291,10 @@ abstract class Driver
      */
     public function string(mixed $strings, string $null = 'NULL'): string
     {
+        if ($strings === null) {
+            return $null;
+        }
+
         if (!$this->connected) {
             $this->connect();
         }
@@ -311,35 +319,39 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    public function scalar(mixed $strings, string $null = 'NULL'): string
+    public function scalar(mixed $scalars, string $null = 'NULL'): string
     {
+        if ($scalars === null) {
+            return $null;
+        }
+
         if (!$this->connected) {
             $this->connect();
         }
 
-        if (is_array($strings)) {
-            foreach ($strings as &$string) {
-                if ($string === null) {
-                    $string = $null;
-                } elseif (is_numeric($string)) {
-                    $string = (string) $string;
+        if (is_array($scalars)) {
+            foreach ($scalars as &$scalar) {
+                if ($scalar === null) {
+                    $scalar = $null;
+                } elseif (is_numeric($scalar)) {
+                    $scalar = (string) $scalar;
                 } else {
-                    $string = $this->escapeString((string) $string);
+                    $scalar = $this->escapeString((string) $scalar);
                 }
             }
 
-            return $this->commas($strings, '');
-        } elseif (is_numeric($strings)) {
-            return (string) $strings;
+            return $this->commas($scalars, '');
+        } elseif (is_numeric($scalars)) {
+            return (string) $scalars;
         }
 
-        return $this->escapeString((string) $strings);
+        return $this->escapeString((string) $scalars);
     }
 
     /**
      * Joins expressions for WHERE.
      */
-    public function every(array $expressions, string $default = 'true'): string
+    public function every(array $expressions, ?string $default = 'true'): string
     {
         if (!$expressions) {
             return $default;
@@ -351,7 +363,7 @@ abstract class Driver
     /**
      * Joins expressions for WHERE.
      */
-    public function any(array $expressions, string $default = 'true'): string
+    public function any(array $expressions, ?string $default = 'true'): string
     {
         if (!$expressions) {
             return $default;
@@ -363,7 +375,7 @@ abstract class Driver
     /**
      * Joins expressions for SELECT or ORDER.
      */
-    public function commas(array $expressions, string $default = 'true'): string
+    public function commas(array $expressions, ?string $default = 'true'): string
     {
         if (!$expressions) {
             return $default;
@@ -375,7 +387,7 @@ abstract class Driver
     /**
      * Joins expressions with pluses.
      */
-    public function pluses(array $expressions, string $default = ''): string
+    public function pluses(array $expressions, ?string $default = ''): string
     {
         if (!$expressions) {
             return $default;
@@ -387,7 +399,7 @@ abstract class Driver
     /**
      * Joins expressions with spaces.
      */
-    public function spaces(array $expressions, string $default = ''): string
+    public function spaces(array $expressions, ?string $default = ''): string
     {
         if (!$expressions) {
             return $default;
