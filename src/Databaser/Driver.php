@@ -256,6 +256,11 @@ abstract class Driver
     }
 
     /**
+     * Escapes special characters in a string.
+     */
+    abstract protected function escapeString(string $string): string;
+
+    /**
      * Formats numbers for queries.
      */
     public function number(mixed $numbers, string $null = 'NULL'): string
@@ -280,9 +285,28 @@ abstract class Driver
     }
 
     /**
-     * Escapes special characters in a string.
+     * Formats booleans for queries.
      */
-    abstract protected function escapeString(string $string): string;
+    public function bool(mixed $booleans, string $null = 'NULL'): string
+    {
+        if ($booleans === null) {
+            return $null;
+        }
+
+        if (is_array($booleans)) {
+            foreach ($booleans as &$boolean) {
+                if ($boolean === null) {
+                    $boolean = $null;
+                } else {
+                    $boolean = $boolean ? 'true' : 'false';
+                }
+            }
+
+            return $this->commas($booleans, '');
+        }
+
+        return $booleans ? 'true' : 'false';
+    }
 
     /**
      * Formats and escapes strings for queries.
@@ -315,7 +339,7 @@ abstract class Driver
     }
 
     /**
-     * Formats and escapes strings for queries, but leave numeric types as-is.
+     * Formats and escapes strings, booleans and numerics for queries depending on types.
      *
      * @throws Exception\Runtime
      */
@@ -335,6 +359,8 @@ abstract class Driver
                     $scalar = $null;
                 } elseif (is_numeric($scalar)) {
                     $scalar = (string) $scalar;
+                } elseif (is_bool($scalar)) {
+                    $scalar = $scalar ? 'true' : 'false';
                 } else {
                     $scalar = $this->escapeString((string) $scalar);
                 }
@@ -343,6 +369,8 @@ abstract class Driver
             return $this->commas($scalars, '');
         } elseif (is_numeric($scalars)) {
             return (string) $scalars;
+        } elseif (is_bool($scalars)) {
+            return $scalars ? 'true' : 'false';
         }
 
         return $this->escapeString((string) $scalars);
