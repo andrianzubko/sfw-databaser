@@ -50,7 +50,7 @@ abstract class Driver
     /**
      * Timer of executed queries.
      */
-    protected static float $timer = 0;
+    protected static float $timer = 0.0;
 
     /**
      * Count of executed queries.
@@ -234,7 +234,9 @@ abstract class Driver
         try {
             $result = $this->executeQueries(implode('; ', $queries));
         } finally {
-            self::$timer += $timer = gettimeofday(true) - $timer;
+            $timer = gettimeofday(true) - $timer;
+
+            self::$timer += $timer;
 
             self::$counter += 1;
 
