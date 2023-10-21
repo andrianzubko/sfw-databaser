@@ -201,14 +201,6 @@ class Result implements \IteratorAggregate
     }
 
     /**
-     * Gets column names of result rows.
-     */
-    public function getColNames(): array
-    {
-        return $this->colNames;
-    }
-
-    /**
      * Gets iterator with result rows.
      */
     public function getIterator(): \Traversable
@@ -229,14 +221,13 @@ class Result implements \IteratorAggregate
     /**
      * Converts row values to native PHP types.
      */
-    private function convertRow(array $row): array
+    protected function convertRow(array $row): array
     {
         foreach ($this->colTypes as $i => $type) {
             if ($row[$i] !== null) {
                 $row[$i] = match ($type) {
                     self::INT => (int) $row[$i],
                     self::FLOAT => (float) $row[$i],
-                    self::BOOL => ($row[$i] === 't'),
                     self::JSON => json_decode($row[$i], true),
                     default => $row[$i]
                 };
@@ -249,12 +240,11 @@ class Result implements \IteratorAggregate
     /**
      * Converts column value to native PHP types.
      */
-    private function convertColumn(mixed $column, int $type): mixed
+    protected function convertColumn(mixed $column, int $type): mixed
     {
         return match ($type) {
             self::INT => (int) $column,
             self::FLOAT => (float) $column,
-            self::BOOL => ($column === 't'),
             self::JSON => json_decode($column, true),
             default => $column
         };

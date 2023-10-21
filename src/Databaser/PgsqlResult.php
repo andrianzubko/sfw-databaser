@@ -93,4 +93,38 @@ class PgsqlResult extends Result
     {
         return pg_num_rows($this->result);
     }
+
+    /**
+     * Converts row values to native PHP types.
+     */
+    protected function convertRow(array $row): array
+    {
+        foreach ($this->colTypes as $i => $type) {
+            if ($row[$i] !== null) {
+                $row[$i] = match ($type) {
+                    self::INT => (int) $row[$i],
+                    self::FLOAT => (float) $row[$i],
+                    self::BOOL => ($row[$i] === 't'),
+                    self::JSON => json_decode($row[$i], true),
+                    default => $row[$i]
+                };
+            }
+        }
+
+        return $row;
+    }
+
+    /**
+     * Converts column value to native PHP types.
+     */
+    protected function convertColumn(mixed $column, int $type): mixed
+    {
+        return match ($type) {
+            self::INT => (int) $column,
+            self::FLOAT => (float) $column,
+            self::BOOL => ($column === 't'),
+            self::JSON => json_decode($column, true),
+            default => $column
+        };
+    }
 }
