@@ -155,7 +155,7 @@ abstract class Driver
     {
         $this->queries[] = [self::REGULAR, $query];
 
-        if (count($this->queries) > 64) {
+        if (\count($this->queries) > 64) {
             $this->execute();
         }
 
@@ -261,7 +261,7 @@ abstract class Driver
         switch (true) {
             case $number === null:
                 return $null;
-            case is_array($number):
+            case \is_array($number):
                 foreach ($number as $i => $value) {
                     $number[$i] = $this->number($value, $null);
                 }
@@ -280,7 +280,7 @@ abstract class Driver
         switch (true) {
             case $bool === null:
                 return $null;
-            case is_array($bool):
+            case \is_array($bool):
                 foreach ($bool as $i => $value) {
                     $bool[$i] = $this->bool($value, $null);
                 }
@@ -301,7 +301,7 @@ abstract class Driver
         switch (true) {
             case $string === null:
                 return $null;
-            case is_array($string):
+            case \is_array($string):
                 foreach ($string as $i => $value) {
                     $string[$i] = $this->string($value, $null);
                 }
@@ -322,15 +322,15 @@ abstract class Driver
         switch (true) {
             case $scalar === null:
                 return $null;
-            case is_array($scalar):
+            case \is_array($scalar):
                 foreach ($scalar as $i => $value) {
                     $scalar[$i] = $this->scalar($value, $null);
                 }
 
                 return $this->commas($scalar, '');
-            case is_numeric($scalar):
+            case \is_numeric($scalar):
                 return (string) $scalar;
-            case is_bool($scalar):
+            case \is_bool($scalar):
                 return $scalar ? 'true' : 'false';
             default:
                 return $this->escapeString((string) $scalar);

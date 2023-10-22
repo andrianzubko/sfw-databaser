@@ -28,7 +28,7 @@ class Mysql extends Driver
         if (!isset($this->options['host'])) {
             $this->options['host'] = 'localhost';
         } elseif (
-            str_starts_with($this->options['host'], '/')
+            \str_starts_with($this->options['host'], '/')
         ) {
             $this->options['socket'] = $this->options['host'];
 
