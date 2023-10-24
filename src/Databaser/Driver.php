@@ -28,6 +28,11 @@ abstract class Driver
     protected const ROLLBACK = 3;
 
     /**
+     * Queries queue.
+     */
+    protected array $queries = [];
+
+    /**
      * In transaction flag.
      */
     protected bool $inTrans = false;
@@ -36,11 +41,6 @@ abstract class Driver
      * Default mode for fetchAll method of Result class.
      */
     protected ?int $mode = null;
-
-    /**
-     * Queries queue.
-     */
-    protected array $queries = [];
 
     /**
      * External profiler for queries.
@@ -99,13 +99,13 @@ abstract class Driver
      */
     public function begin(?string $isolation = null): self
     {
-        $this->execute();
-
         if ($this->inTrans) {
             $this->rollback();
         }
 
         $this->queries[] = [self::BEGIN, $this->makeBeginCommand($isolation)];
+
+        $this->inTrans = true;
 
         return $this;
     }
@@ -125,6 +125,8 @@ abstract class Driver
 
         $this->execute();
 
+        $this->inTrans = false;
+
         return $this;
     }
 
@@ -133,15 +135,17 @@ abstract class Driver
      *
      * @throws Exception\Runtime
      */
-    public function rollback(?string $to = null): self
+    public function rollback(): self
     {
-        if ($to !== null) {
-            $this->queries[] = [self::REGULAR, "ROLLBACK TO $to"];
+        if ($this->queries && end($this->queries)[0] === self::BEGIN) {
+            array_pop($this->queries);
         } else {
             $this->queries[] = [self::ROLLBACK, "ROLLBACK"];
         }
 
         $this->execute();
+
+        $this->inTrans = false;
 
         return $this;
     }
@@ -214,15 +218,6 @@ abstract class Driver
     {
         if (!$this->queries) {
             return false;
-        }
-
-        foreach ($this->queries as $query) {
-            $this->inTrans = match ($query[0]) {
-                self::BEGIN => true,
-                self::COMMIT,
-                self::ROLLBACK => false,
-                default => $this->inTrans
-            };
         }
 
         $queries = array_column($this->queries, 1);
