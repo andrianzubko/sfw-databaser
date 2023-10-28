@@ -419,9 +419,9 @@ abstract class Driver
     /**
      * Sets external profiler for queries.
      */
-    public function setProfiler(\Closure $profiler): self
+    public function setProfiler(callable $profiler): self
     {
-        $this->profiler = $profiler;
+        $this->profiler = $profiler(...);
 
         return $this;
     }
