@@ -1,4 +1,5 @@
 <?php /** @noinspection PhpComposerExtensionStubsInspection */
+
 declare(strict_types=1);
 
 namespace SFW\Databaser;
@@ -25,15 +26,14 @@ class Pgsql extends Driver
         }
 
         $db = (($this->options['persistent'] ?? false) ? 'pg_pconnect' : 'pg_connect')(
-            sprintf(
-                "host=%s port=%s dbname=%s user=%s password=%s",
-                    $this->options['host'] ?? 'localhost',
-                    $this->options['port'] ?? 5432,
-                    $this->options['db'] ?? '',
-                    $this->options['user'] ?? '',
-                    $this->options['pass'] ?? ''
+            sprintf("host=%s port=%s dbname=%s user=%s password=%s",
+                $this->options['host'] ?? 'localhost',
+                $this->options['port'] ?? 5432,
+                $this->options['db'] ?? '',
+                $this->options['user'] ?? '',
+                $this->options['pass'] ?? '',
             ),
-            PGSQL_CONNECT_FORCE_NEW
+            PGSQL_CONNECT_FORCE_NEW,
         );
 
         if ($db === false) {

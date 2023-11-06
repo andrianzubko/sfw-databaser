@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace SFW\Databaser;
@@ -63,12 +64,12 @@ class Result implements \IteratorAggregate
         foreach ($this->fetchAllRows() as $row) {
             $rows[] = match ($mode) {
                 \SFW\Databaser::ASSOC => array_combine($this->colNames,
-                    $this->convertRow($row)
+                    $this->convertRow($row),
                 ),
                 \SFW\Databaser::OBJECT => (object) array_combine($this->colNames,
-                    $this->convertRow($row)
+                    $this->convertRow($row),
                 ),
-                default => $this->convertRow($row)
+                default => $this->convertRow($row),
             };
         }
 
@@ -230,7 +231,7 @@ class Result implements \IteratorAggregate
                     self::INT => (int) $row[$i],
                     self::FLOAT => (float) $row[$i],
                     self::JSON => json_decode($row[$i], true),
-                    default => $row[$i]
+                    default => $row[$i],
                 };
             }
         }
@@ -247,7 +248,7 @@ class Result implements \IteratorAggregate
             self::INT => (int) $column,
             self::FLOAT => (float) $column,
             self::JSON => json_decode($column, true),
-            default => $column
+            default => $column,
         };
     }
 }

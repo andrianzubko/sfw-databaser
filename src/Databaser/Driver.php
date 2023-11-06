@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace SFW\Databaser;
@@ -73,8 +74,7 @@ abstract class Driver
                     if ($this->inTrans) {
                         try {
                             $this->rollback();
-                        } catch (Exception) {
-                        }
+                        } catch (Exception) {}
                     }
                 }
             );

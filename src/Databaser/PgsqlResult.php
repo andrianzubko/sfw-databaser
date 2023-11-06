@@ -1,4 +1,5 @@
 <?php /** @noinspection PhpComposerExtensionStubsInspection */
+
 declare(strict_types=1);
 
 namespace SFW\Databaser;
@@ -33,6 +34,7 @@ class PgsqlResult extends Result
                     break;
                 case 'json':
                     $this->colTypes[$i] = self::JSON;
+                    break;
             }
         }
     }
@@ -107,7 +109,7 @@ class PgsqlResult extends Result
                     self::FLOAT => (float) $row[$i],
                     self::BOOL => ($row[$i] === 't'),
                     self::JSON => json_decode($row[$i], true),
-                    default => $row[$i]
+                    default => $row[$i],
                 };
             }
         }
@@ -125,7 +127,7 @@ class PgsqlResult extends Result
             self::FLOAT => (float) $column,
             self::BOOL => ($column === 't'),
             self::JSON => json_decode($column, true),
-            default => $column
+            default => $column,
         };
     }
 }

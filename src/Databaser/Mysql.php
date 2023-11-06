@@ -1,4 +1,5 @@
 <?php /** @noinspection PhpComposerExtensionStubsInspection */
+
 declare(strict_types=1);
 
 namespace SFW\Databaser;
@@ -28,9 +29,7 @@ class Mysql extends Driver
 
         if (!isset($this->options['host'])) {
             $this->options['host'] = 'localhost';
-        } elseif (
-            str_starts_with($this->options['host'], '/')
-        ) {
+        } elseif (str_starts_with($this->options['host'], '/')) {
             $this->options['socket'] = $this->options['host'];
 
             $this->options['host'] = 'localhost';
@@ -114,9 +113,7 @@ class Mysql extends Driver
 
             do {
                 $result = $this->db->store_result();
-            } while (
-                $this->db->next_result()
-            );
+            } while ($this->db->next_result());
         } catch (\mysqli_sql_exception $e) {
             throw (new Exception\Runtime($e->getMessage()))
                 ->setSqlState($e->getSqlState())
